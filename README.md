@@ -47,12 +47,6 @@ npm run test       # 546 tests
 npm run build      # production bundle into dist/
 ```
 
-**Deploy on Replit** — import this repo (Create Repl → Import from GitHub);
-the included [`.replit`](./.replit) config runs the dev server for the
-workspace and ships `npm run build` → `dist/` as a static deployment. No
-server, no secrets: the optional AI panel asks each visitor for their own
-Anthropic API key, stored only in their browser.
-
 ## The interface
 
 The UI is a **mobile-first, touch-native Liquid Glass design** in the
