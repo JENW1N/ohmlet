@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "name": "0-9 counter with 7-segment display",
+  "description": "An NE555 astable clock at ~2 Hz (f = 1.44/((10k+2*31k)*10uF)) drives the CLK of a CD4026 decade counter, whose decoded segment outputs A-G light a common-cathode 7-segment display through 330R series resistors. The display counts 0..9 forever. The pushbutton pulls the CD4026 RST pin to +5V (10k pull-down keeps it low otherwise): hold it to reset the count to 0.",
+  "components": [
+    { "id": "PS1", "type": "power_supply", "params": { "voltage": 5 } },
+    { "id": "U1", "type": "ne555", "at": "f5" },
+    { "id": "R1", "type": "resistor", "params": { "resistance": 10000 }, "holes": ["b5", "a6"] },
+    { "id": "R2", "type": "resistor", "params": { "resistance": 31000 }, "holes": ["b6", "a7"] },
+    { "id": "C1", "type": "capacitor", "params": { "capacitance": 1e-5, "polarized": true }, "holes": ["b7", "top-2"] },
+    { "id": "U2", "type": "cd4026", "at": "f12" },
+    { "id": "DS1", "type": "seven_segment", "at": "f24" },
+    { "id": "RA", "type": "resistor", "params": { "resistance": 330 }, "holes": ["a18", "a27"] },
+    { "id": "RB", "type": "resistor", "params": { "resistance": 330 }, "holes": ["a16", "a28"] },
+    { "id": "RC", "type": "resistor", "params": { "resistance": 330 }, "holes": ["a15", "g27"] },
+    { "id": "RD", "type": "resistor", "params": { "resistance": 330 }, "holes": ["a19", "g25"] },
+    { "id": "RE", "type": "resistor", "params": { "resistance": 330 }, "holes": ["a17", "g24"] },
+    { "id": "RF", "type": "resistor", "params": { "resistance": 330 }, "holes": ["g17", "a25"] },
+    { "id": "RG", "type": "resistor", "params": { "resistance": 330 }, "holes": ["g18", "a24"] },
+    { "id": "R3", "type": "resistor", "params": { "resistance": 10000 }, "holes": ["b13", "top-5"] },
+    { "id": "SW1", "type": "pushbutton", "at": "f33" }
+  ],
+  "wires": [
+    { "id": "w1", "from": "PS1:+", "to": "top+0", "color": "red" },
+    { "id": "w2", "from": "PS1:-", "to": "top-0", "color": "black" },
+    { "id": "w3", "from": "a5", "to": "top+1", "color": "red" },
+    { "id": "w4", "from": "g5", "to": "top-1", "color": "black" },
+    { "id": "w5", "from": "g8", "to": "top+2", "color": "red" },
+    { "id": "w6", "from": "g6", "to": "c7", "color": "yellow" },
+    { "id": "w7", "from": "g7", "to": "g12", "color": "orange" },
+    { "id": "w8", "from": "g13", "to": "top-3", "color": "black" },
+    { "id": "w9", "from": "g14", "to": "top+3", "color": "red" },
+    { "id": "w10", "from": "g19", "to": "top-4", "color": "black" },
+    { "id": "w11", "from": "a12", "to": "top+4", "color": "red" },
+    { "id": "w12", "from": "a13", "to": "g33", "color": "green" },
+    { "id": "w13", "from": "h35", "to": "top+5", "color": "red" },
+    { "id": "w14", "from": "g26", "to": "top-6", "color": "black" }
+  ]
+}

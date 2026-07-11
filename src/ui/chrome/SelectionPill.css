@@ -1,0 +1,114 @@
+/* ==========================================================================
+   SelectionPill — floating glass pill centered above the dock while 2+
+   items are selected ("3 selected · Delete · Clear"). Springs in/out via
+   transform + opacity only (house spring; reduced motion collapses the
+   duration tokens in kit.css). Tier-S Liquid Glass: bent-light rim + slab
+   inset shadows come from the `lg-card` class (kit.css); this file layers
+   the darker over-scene tint + stronger ink. NO backdrop-filter: dock +
+   capsule + sheet (+ toast) already claim the ≤4 concurrent-blur budget
+   (DESIGN.md §7), matching the UndoPill's recipe.
+   ========================================================================== */
+
+.app-sel-pill {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--lg-safe-bottom) + 83px); /* dock bottom 12 + dock 61 + gap 10 */
+  z-index: 42; /* above the canvas + undo pill (41), below sheets (51) */
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 6px 3px 16px;
+  border-radius: 999px;
+  font-family: var(--lg-font);
+  /* darker tint than the in-sheet cards: it floats over the bright board */
+  background: linear-gradient(180deg, rgba(52, 56, 68, 0.92), rgba(34, 36, 46, 0.9));
+  border: none;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -8px 18px -12px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+  /* adaptive ink at over-scene strength */
+  --lg-ink-shadow: 0 1px 3px rgba(8, 10, 14, 0.55);
+  text-shadow: var(--lg-ink-shadow);
+  /* spring in/out (reduced motion collapses the duration tokens in kit.css) */
+  opacity: 0;
+  transform: translate(-50%, 10px) scale(0.95);
+  transition:
+    transform var(--lg-dur-control) var(--lg-spring),
+    opacity var(--lg-dur-control) var(--lg-spring);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+.app-sel-pill.is-in {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  pointer-events: auto;
+}
+
+/* a sheet resting ≥ half covers this area — hide with the dock */
+body.lg-dock-covered .app-sel-pill {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* hop above the wire color strip while wire mode is armed */
+body.app-wire-armed .app-sel-pill {
+  bottom: calc(var(--lg-safe-bottom) + 145px);
+}
+
+.app-sel-count {
+  font: 600 15px/20px var(--lg-font);
+  color: var(--label);
+  white-space: nowrap;
+}
+
+.app-sel-dot {
+  color: var(--label-3);
+  font: 600 15px/20px var(--lg-font);
+  padding: 0 1px;
+}
+
+.app-sel-btn {
+  position: relative; /* hosts the gel bloom layer (lg-specular ::after) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px; /* 44px minimum touch target (DESIGN.md §4) */
+  height: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--ios-blue);
+  font: 600 15px/20px var(--lg-font);
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  --lg-spec-size: 110px; /* gel bloom sized for the small pill button */
+}
+.app-sel-btn[data-pressed='true'] {
+  background: var(--fill-2);
+}
+.app-sel-btn:focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: -2px;
+}
+
+/* destructive action — red tinted (DESIGN.md §3) */
+.app-sel-delete {
+  color: var(--ios-red);
+}
+
+/* desktop ≥900px: the dock is a left rail — drop to the bottom edge */
+@media (min-width: 900px) {
+  .app-sel-pill {
+    bottom: calc(var(--lg-safe-bottom) + 24px);
+  }
+  body.app-wire-armed .app-sel-pill {
+    bottom: calc(var(--lg-safe-bottom) + 90px);
+  }
+}

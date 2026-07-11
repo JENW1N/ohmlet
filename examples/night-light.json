@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "name": "Automatic night light",
+  "description": "A photoresistor (LDR) and a 10k resistor form a voltage divider that rises in the dark (R1 from +5V to the sense node, LDR from the node to ground). An LM358 comparator compares the sense node (IN1+) against a threshold set by a 10k potentiometer (IN1-, mid position = 2.5V): when it gets dark the op-amp output goes high and lights the LED through a 330R resistor. Drag the LDR light slider down while simulating to watch the night light switch on; turn the pot to adjust the trip point.",
+  "components": [
+    { "id": "PS1", "type": "power_supply", "params": { "voltage": 5 } },
+    { "id": "U1", "type": "lm358", "at": "f15" },
+    { "id": "R1", "type": "resistor", "params": { "resistance": 10000 }, "holes": ["top+2", "a3"] },
+    { "id": "LDR1", "type": "photoresistor", "params": { "light": 0.9 }, "holes": ["b3", "top-2"] },
+    { "id": "RV1", "type": "potentiometer", "params": { "resistance": 10000, "position": 0.5 }, "holes": ["a8", "a9", "a10"] },
+    { "id": "R2", "type": "resistor", "params": { "resistance": 330 }, "holes": ["g15", "g22"] },
+    { "id": "D1", "type": "led", "params": { "color": "red" }, "holes": ["h22", "top-4"] }
+  ],
+  "wires": [
+    { "id": "w1", "from": "PS1:+", "to": "top+0", "color": "red" },
+    { "id": "w2", "from": "PS1:-", "to": "top-0", "color": "black" },
+    { "id": "w3", "from": "a15", "to": "top+1", "color": "red" },
+    { "id": "w4", "from": "g18", "to": "top-1", "color": "black" },
+    { "id": "w5", "from": "c3", "to": "g17", "color": "yellow" },
+    { "id": "w6", "from": "c9", "to": "g16", "color": "green" },
+    { "id": "w7", "from": "c8", "to": "top-3", "color": "black" },
+    { "id": "w8", "from": "c10", "to": "top+3", "color": "red" }
+  ]
+}

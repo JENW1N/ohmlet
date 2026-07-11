@@ -1,0 +1,349 @@
+/* ==========================================================================
+   App shell (app-shell agent) — phone-first liquid-glass chrome over the
+   full-bleed 3D canvas. Kit material/tokens come from src/ui/kit/kit.css
+   (loaded via the kit barrel); everything here is app-shell specific and
+   uses the `app-` prefix. Animations: transform/opacity only.
+   ========================================================================== */
+
+/* ---- fixed, non-scrolling shell (DESIGN.md §5) ---- */
+.app-root {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  width: 100dvw;
+  overflow: hidden;
+  background: #15171c;
+  color: var(--label);
+  font-family: var(--lg-font);
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ---- full-bleed 3D canvas under everything ---- */
+.app-canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+.app-canvas canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* ==========================================================================
+   Status capsule internals (run dot + clock)
+   ========================================================================== */
+
+.app-run-dot {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--label-3);
+}
+.app-run-dot.is-running {
+  background: var(--ios-green);
+  animation: app-dot-pulse 1.5s var(--lg-spring) infinite;
+}
+@keyframes app-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.82);
+  }
+}
+
+.app-run-word {
+  margin-left: 7px;
+  font: 400 13px/18px var(--lg-font);
+  color: var(--label-2);
+}
+
+/* ==========================================================================
+   Wire color strip — floats above the dock while wire mode is armed
+   ========================================================================== */
+
+.app-wire-strip {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--lg-safe-bottom) + 83px); /* dock bottom 12 + dock 61 + gap 10 */
+  transform: translateX(-50%);
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  /* CLEAR-variant Liquid Glass (background comes from .lg-glass-clear in
+     kit.css) WITHOUT backdrop-filter: the strip coexists with dock +
+     capsule + toasts, and the ≤4 concurrent-blur budget (DESIGN.md §7)
+     reserves those for the big surfaces */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: app-rise-in 320ms var(--lg-spring);
+}
+
+.app-swatch {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  background: var(--swatch, #888c94);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.app-swatch.is-active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.85), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* toasts hop above the strip while it is shown */
+body.app-wire-armed .lg-toast-host {
+  bottom: calc(var(--lg-safe-bottom) + 145px);
+}
+
+@keyframes app-rise-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   Dock badge (issue count on the More tab)
+   ========================================================================== */
+
+.app-dock-iconwrap {
+  position: relative;
+  display: block;
+}
+.app-dock-badge {
+  position: absolute;
+  top: -3px;
+  right: -9px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--ios-red);
+  color: #fff;
+  font: 600 10px/16px var(--lg-font);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ==========================================================================
+   Empty state — "Build your first circuit"
+   ========================================================================== */
+
+.app-empty {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  padding-bottom: calc(var(--lg-safe-bottom) + 110px); /* keep clear of the dock */
+  pointer-events: none;
+}
+.app-empty-card {
+  position: relative; /* Liquid Glass rim/specular layers need a positioned host */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(86vw, 340px);
+  padding: 28px 24px calc(24px);
+  text-align: center;
+  pointer-events: auto;
+  animation: app-card-in var(--lg-dur-sheet) var(--lg-spring);
+}
+.app-empty-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: rgba(10, 132, 255, 0.16);
+  color: var(--ios-blue);
+  margin-bottom: 4px;
+}
+.app-empty-title {
+  text-wrap: balance;
+}
+.app-empty-body {
+  text-wrap: pretty;
+}
+.app-empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+}
+.app-empty-actions .lg-btn {
+  width: 100%;
+}
+
+@keyframes app-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   Onboarding — 3-step coach overlay (first launch)
+   ========================================================================== */
+
+.app-onboard {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.app-onboard-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45); /* dim only — never a full-screen blur */
+  animation: app-fade-in 240ms linear;
+}
+.app-onboard-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(88vw, 360px);
+  padding: 28px 0 18px;
+  animation: app-card-in var(--lg-dur-sheet) var(--lg-spring);
+}
+.app-onboard-track-clip {
+  overflow: hidden;
+  width: 100%;
+}
+.app-onboard-track {
+  display: flex;
+  width: 300%;
+  transition: transform var(--lg-dur-sheet) var(--lg-spring);
+  will-change: transform;
+}
+.app-onboard-step {
+  flex: 0 0 calc(100% / 3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 28px;
+  text-align: center;
+  min-height: 178px;
+}
+.app-onboard-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+  background: rgba(10, 132, 255, 0.16);
+  color: var(--ios-blue);
+  margin-bottom: 4px;
+}
+.app-onboard-body {
+  text-wrap: pretty;
+}
+
+.app-onboard-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 0 4px;
+}
+.app-onboard-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--fill);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--lg-dur-control) var(--lg-spring),
+    opacity var(--lg-dur-control) var(--lg-spring);
+}
+.app-onboard-dot.is-active {
+  background: var(--ios-blue);
+  transform: scale(1.25);
+}
+
+.app-onboard-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px 0;
+}
+.app-onboard-skip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: none;
+  background: none;
+  font: 400 17px/22px var(--lg-font);
+  color: var(--label-2);
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   Reduced motion — kill decorative animations (springs already collapse
+   via the --lg-dur-* tokens in kit.css)
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .app-run-dot.is-running,
+  .app-wire-strip,
+  .app-empty-card,
+  .app-onboard-card,
+  .app-onboard-scrim {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Desktop ≥ 900px — rail + panels (DESIGN.md §6)
+   ========================================================================== */
+
+@media (min-width: 900px) {
+  /* the dock rail owns the left edge; keep floating bits clear of it */
+  .app-wire-strip {
+    bottom: calc(var(--lg-safe-bottom) + 24px);
+  }
+  body.app-wire-armed .lg-toast-host {
+    bottom: calc(var(--lg-safe-bottom) + 90px);
+  }
+}

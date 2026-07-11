@@ -1,0 +1,42 @@
+/* ==========================================================================
+   Global base for the liquid-glass UI (imported once by src/main.tsx).
+   Design tokens (--ios-*, --label*, --lg-*) live in src/ui/kit/kit.css;
+   shell styles in src/app.css; sheet styles next to their components.
+   index.html owns the html/body/#root fixed-shell rules (DESIGN.md §5).
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, 'SF Pro Text',
+    'Segoe UI', Roboto, sans-serif;
+  font-size: 17px; /* iOS Body */
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Unobtrusive dark scrollbars for anything still scrollable on desktop;
+   chrome surfaces (sheets, chip rows) hide theirs in their component CSS. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}

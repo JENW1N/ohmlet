@@ -1,0 +1,451 @@
+/* ==========================================================================
+   AI / Scope / More sheets (+ shared ApiKeyRow) — `asm-` prefix.
+   Additive to kit.css; uses only kit tokens (--ios-*, --label*, --fill*,
+   --separator, --lg-*). Per DESIGN.md §7 every animation here is
+   transform/opacity only and reduced motion is honored.
+   ========================================================================== */
+
+/* Inner cards must NOT stack backdrop blur over the sheet's own glass
+   (DESIGN.md: ≤4 blurred surfaces, max 3 glass layers). The Tier-S
+   nested-glass recipe for in-sheet ListGroups lives in kit.css
+   (`.lg-sheet .lg-list, .lg-panel .lg-list`); the AI/More/Scope cards
+   below wear the same material via the `lg-card` class hook. */
+
+/* ---- shared layout -------------------------------------------------------- */
+
+.asm-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+.asm-sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 2px 2px 0;
+}
+.asm-sheet-head svg {
+  color: var(--ios-blue);
+  flex: 0 0 auto;
+}
+.asm-mono {
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+}
+.asm-block {
+  width: 100%;
+}
+.asm-foot {
+  text-align: center;
+  padding: 2px 8px 6px;
+}
+
+/* selectable text inside an otherwise user-select:none sheet */
+.asm-textarea,
+.asm-input,
+.asm-explain,
+.asm-import-text {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ---- AI sheet -------------------------------------------------------------- */
+
+/* prompt card — nested glass (rim + slab via the lg-card hook); focus
+   swaps the micro-rim for a blue one */
+.asm-prompt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px 12px;
+  border: none;
+}
+.asm-prompt-card:focus-within {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -8px 18px -12px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(10, 132, 255, 0.55);
+}
+.asm-textarea {
+  width: 100%;
+  min-height: 66px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--label);
+  font: 400 17px/22px var(--lg-font);
+  caret-color: var(--ios-blue);
+}
+.asm-textarea::placeholder {
+  color: var(--label-3);
+}
+
+.asm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.asm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 13px;
+  border: none;
+  border-radius: 999px;
+  /* nested-glass slab (no conic ring — ::after is the 44px hit slot) */
+  background: linear-gradient(180deg, rgba(130, 135, 152, 0.26), rgba(102, 106, 122, 0.16));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    inset 0 -4px 8px -6px rgba(0, 0, 0, 0.35);
+  color: var(--label-2);
+  font: 400 14px/18px var(--lg-font);
+  cursor: pointer;
+}
+
+/* busy: shimmering status row (transform/opacity-only sweep + icon pulse) */
+.asm-status {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--lg-radius-card);
+  /* blue-tinted nested glass (rim ring via the lg-card hook) */
+  background: linear-gradient(180deg, rgba(46, 148, 255, 0.18), rgba(10, 132, 255, 0.09));
+  border: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 0.5px rgba(110, 180, 255, 0.3),
+    inset 0 -6px 14px -10px rgba(0, 0, 0, 0.38);
+  --lg-rim-cool: 0.22;
+}
+.asm-status::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -45%;
+  width: 40%;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 35%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.05) 65%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+  animation: asm-shimmer 1.8s linear infinite;
+}
+@keyframes asm-shimmer {
+  from { transform: translateX(0); }
+  to { transform: translateX(420%); }
+}
+.asm-status-icon {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--ios-blue);
+  animation: asm-pulse 1.4s ease-in-out infinite;
+}
+@keyframes asm-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+.asm-status-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: 400 15px/20px var(--lg-font);
+  color: var(--label);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* error: red-tinted nested glass (rim ring via the lg-card hook) */
+.asm-error {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--lg-radius-card);
+  background: linear-gradient(180deg, rgba(255, 86, 74, 0.2), rgba(255, 69, 58, 0.1));
+  border: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 0.5px rgba(255, 120, 110, 0.32),
+    inset 0 -6px 14px -10px rgba(0, 0, 0, 0.38);
+  --lg-rim-warm: 0.2;
+}
+.asm-error-title {
+  font: 600 15px/20px var(--lg-font);
+  color: var(--ios-red);
+}
+.asm-error-msg {
+  font: 400 14px/19px var(--lg-font);
+  color: var(--label);
+  overflow-wrap: anywhere;
+}
+.asm-error ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* pending result card — nested glass via the lg-card hook + a tracked
+   specular (AiSheet registers it: the sheen travels over the result) */
+.asm-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: none;
+}
+.asm-result-title {
+  font: 600 17px/22px var(--lg-font);
+  color: var(--label);
+  overflow-wrap: anywhere;
+}
+.asm-explain {
+  margin: 0;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--separator);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 220px;
+  overflow-y: auto;
+  font: 400 14px/20px var(--lg-font);
+  color: var(--label-2);
+}
+.asm-result-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 2px;
+}
+.asm-result-actions > * {
+  flex: 1 1 0;
+}
+
+/* ---- ApiKeyRow -------------------------------------------------------------- */
+
+.asm-key-editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 16px 14px;
+}
+.asm-key-fieldrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.asm-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--lg-radius-field);
+  border: none;
+  /* recessed glass well */
+  background: rgba(16, 18, 26, 0.32);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    0 0.5px 0 rgba(255, 255, 255, 0.06);
+  color: var(--label);
+  font-size: 15px;
+  outline: none;
+  caret-color: var(--ios-blue);
+}
+.asm-input:focus-visible {
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(10, 132, 255, 0.65);
+}
+.asm-input::placeholder {
+  color: var(--label-3);
+}
+.asm-key-note {
+  margin: 0;
+}
+.asm-key-set {
+  color: var(--ios-green);
+}
+
+/* ---- Scope sheet ------------------------------------------------------------ */
+
+.asm-scope-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.asm-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(130, 135, 152, 0.24), rgba(102, 106, 122, 0.14));
+  border: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  font: 600 12px/16px var(--lg-font);
+  letter-spacing: 0.02em;
+  color: var(--label-2);
+  transition: opacity var(--lg-dur-control) var(--lg-spring);
+}
+.asm-scope-chip.is-off {
+  opacity: 0.38;
+}
+.asm-scope-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+/* the scope screen: a recessed dark glass window (inset shadows = depth,
+   top hairline = the lit lip of the bore) */
+.asm-scope-body {
+  height: clamp(160px, 26dvh, 300px);
+  border-radius: var(--lg-radius-card);
+  overflow: hidden;
+  border: none;
+  background: #0a0c10;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.09),
+    0 0.5px 0 rgba(255, 255, 255, 0.07);
+}
+.lg-panel .asm-scope-body {
+  height: 260px;
+}
+.asm-scope-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- More sheet -------------------------------------------------------------- */
+
+/* stacked row (label above a full-width control, e.g. sim speed) */
+.asm-row-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.asm-row-stack-label {
+  font: 400 17px/22px var(--lg-font);
+  color: var(--label);
+}
+
+/* level-colored issue dots */
+.asm-dot {
+  display: block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.asm-issue-row .lg-row-title {
+  white-space: normal;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.asm-about {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 16px 14px;
+}
+.asm-about p {
+  margin: 0;
+  font: 400 14px/19px var(--lg-font);
+  color: var(--label-2);
+}
+
+/* import sub-view (slides in from the right with the house spring) */
+.asm-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: asm-view-in 320ms var(--lg-spring);
+}
+@keyframes asm-view-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.asm-back-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.asm-back-row .lg-btn {
+  padding-left: 6px;
+}
+.asm-import-filerow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.asm-import-filename {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--label-2);
+}
+.asm-import-or {
+  text-align: center;
+}
+.asm-import-text {
+  width: 100%;
+  min-height: 150px;
+  padding: 12px;
+  border-radius: var(--lg-radius-card);
+  border: none;
+  /* recessed glass well */
+  background: rgba(16, 18, 26, 0.32);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    0 0.5px 0 rgba(255, 255, 255, 0.06);
+  color: var(--label);
+  font: 400 12px/17px ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  resize: none;
+  outline: none;
+  caret-color: var(--ios-blue);
+}
+.asm-import-text:focus-visible {
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(10, 132, 255, 0.65);
+}
+.asm-import-text::placeholder {
+  color: var(--label-3);
+}
+
+/* ---- reduced motion ----------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .asm-status::after {
+    animation: none;
+    content: none;
+  }
+  .asm-status-icon {
+    animation: none;
+  }
+  .asm-view {
+    animation: none;
+  }
+}

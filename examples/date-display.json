@@ -1,0 +1,616 @@
+{
+  "version": 1,
+  "name": "Hardware date display — \"0611\" (June 11)",
+  "description": "A hardware-only date display: four CD4511 BCD-to-7-segment decoders drive four common-cathode 7-segment displays through 330R segment resistors, spelling \"0611\" (June 11, MMDD). Each decoder's BCD inputs A-D are hardwired to the +5V/ground rails in the digit's BCD pattern (0=0000, 6=0110, 1=0001), LT and BL are tied high (inactive) and LE low (transparent), so the date appears with no microcontroller at all. All four digits fit on one 63-column breadboard.",
+  "components": [
+    {
+      "id": "PS1",
+      "type": "power_supply",
+      "params": {
+        "voltage": 5
+      }
+    },
+    {
+      "id": "U1",
+      "type": "cd4511",
+      "at": "f1"
+    },
+    {
+      "id": "DS1",
+      "type": "seven_segment",
+      "at": "f10"
+    },
+    {
+      "id": "R1A",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a4",
+        "a13"
+      ]
+    },
+    {
+      "id": "R1B",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a5",
+        "a14"
+      ]
+    },
+    {
+      "id": "R1C",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a6",
+        "g13"
+      ]
+    },
+    {
+      "id": "R1D",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a7",
+        "g11"
+      ]
+    },
+    {
+      "id": "R1E",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a8",
+        "g10"
+      ]
+    },
+    {
+      "id": "R1F",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a2",
+        "a11"
+      ]
+    },
+    {
+      "id": "R1G",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a3",
+        "a10"
+      ]
+    },
+    {
+      "id": "U2",
+      "type": "cd4511",
+      "at": "f17"
+    },
+    {
+      "id": "DS2",
+      "type": "seven_segment",
+      "at": "f26"
+    },
+    {
+      "id": "R2A",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a20",
+        "a29"
+      ]
+    },
+    {
+      "id": "R2B",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a21",
+        "a30"
+      ]
+    },
+    {
+      "id": "R2C",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a22",
+        "g29"
+      ]
+    },
+    {
+      "id": "R2D",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a23",
+        "g27"
+      ]
+    },
+    {
+      "id": "R2E",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a24",
+        "g26"
+      ]
+    },
+    {
+      "id": "R2F",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a18",
+        "a27"
+      ]
+    },
+    {
+      "id": "R2G",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a19",
+        "a26"
+      ]
+    },
+    {
+      "id": "U3",
+      "type": "cd4511",
+      "at": "f33"
+    },
+    {
+      "id": "DS3",
+      "type": "seven_segment",
+      "at": "f42"
+    },
+    {
+      "id": "R3A",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a36",
+        "a45"
+      ]
+    },
+    {
+      "id": "R3B",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a37",
+        "a46"
+      ]
+    },
+    {
+      "id": "R3C",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a38",
+        "g45"
+      ]
+    },
+    {
+      "id": "R3D",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a39",
+        "g43"
+      ]
+    },
+    {
+      "id": "R3E",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a40",
+        "g42"
+      ]
+    },
+    {
+      "id": "R3F",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a34",
+        "a43"
+      ]
+    },
+    {
+      "id": "R3G",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a35",
+        "a42"
+      ]
+    },
+    {
+      "id": "U4",
+      "type": "cd4511",
+      "at": "f49"
+    },
+    {
+      "id": "DS4",
+      "type": "seven_segment",
+      "at": "f58"
+    },
+    {
+      "id": "R4A",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a52",
+        "a61"
+      ]
+    },
+    {
+      "id": "R4B",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a53",
+        "a62"
+      ]
+    },
+    {
+      "id": "R4C",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a54",
+        "g61"
+      ]
+    },
+    {
+      "id": "R4D",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a55",
+        "g59"
+      ]
+    },
+    {
+      "id": "R4E",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a56",
+        "g58"
+      ]
+    },
+    {
+      "id": "R4F",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a50",
+        "a59"
+      ]
+    },
+    {
+      "id": "R4G",
+      "type": "resistor",
+      "params": {
+        "resistance": 330
+      },
+      "holes": [
+        "a51",
+        "a58"
+      ]
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": "PS1:+",
+      "to": "top+0",
+      "color": "red"
+    },
+    {
+      "id": "w2",
+      "from": "PS1:-",
+      "to": "top-0",
+      "color": "black"
+    },
+    {
+      "id": "w3",
+      "from": "a1",
+      "to": "top+1",
+      "color": "red"
+    },
+    {
+      "id": "w4",
+      "from": "g3",
+      "to": "top+2",
+      "color": "red"
+    },
+    {
+      "id": "w5",
+      "from": "g4",
+      "to": "top+3",
+      "color": "red"
+    },
+    {
+      "id": "w6",
+      "from": "g8",
+      "to": "top-1",
+      "color": "black"
+    },
+    {
+      "id": "w7",
+      "from": "g5",
+      "to": "top-2",
+      "color": "black"
+    },
+    {
+      "id": "w8",
+      "from": "g12",
+      "to": "top-3",
+      "color": "black"
+    },
+    {
+      "id": "w9",
+      "from": "g7",
+      "to": "top-4",
+      "color": "blue"
+    },
+    {
+      "id": "w10",
+      "from": "g1",
+      "to": "top-5",
+      "color": "blue"
+    },
+    {
+      "id": "w11",
+      "from": "g2",
+      "to": "top-6",
+      "color": "blue"
+    },
+    {
+      "id": "w12",
+      "from": "g6",
+      "to": "top-7",
+      "color": "blue"
+    },
+    {
+      "id": "w13",
+      "from": "a17",
+      "to": "top+4",
+      "color": "red"
+    },
+    {
+      "id": "w14",
+      "from": "g19",
+      "to": "top+5",
+      "color": "red"
+    },
+    {
+      "id": "w15",
+      "from": "g20",
+      "to": "top+6",
+      "color": "red"
+    },
+    {
+      "id": "w16",
+      "from": "g24",
+      "to": "top-8",
+      "color": "black"
+    },
+    {
+      "id": "w17",
+      "from": "g21",
+      "to": "top-9",
+      "color": "black"
+    },
+    {
+      "id": "w18",
+      "from": "g28",
+      "to": "top-10",
+      "color": "black"
+    },
+    {
+      "id": "w19",
+      "from": "g23",
+      "to": "top-11",
+      "color": "blue"
+    },
+    {
+      "id": "w20",
+      "from": "g17",
+      "to": "top+7",
+      "color": "orange"
+    },
+    {
+      "id": "w21",
+      "from": "g18",
+      "to": "top+8",
+      "color": "orange"
+    },
+    {
+      "id": "w22",
+      "from": "g22",
+      "to": "top-12",
+      "color": "blue"
+    },
+    {
+      "id": "w23",
+      "from": "a33",
+      "to": "top+9",
+      "color": "red"
+    },
+    {
+      "id": "w24",
+      "from": "g35",
+      "to": "top+10",
+      "color": "red"
+    },
+    {
+      "id": "w25",
+      "from": "g36",
+      "to": "top+11",
+      "color": "red"
+    },
+    {
+      "id": "w26",
+      "from": "g40",
+      "to": "top-13",
+      "color": "black"
+    },
+    {
+      "id": "w27",
+      "from": "g37",
+      "to": "top-14",
+      "color": "black"
+    },
+    {
+      "id": "w28",
+      "from": "g44",
+      "to": "top-15",
+      "color": "black"
+    },
+    {
+      "id": "w29",
+      "from": "g39",
+      "to": "top+12",
+      "color": "orange"
+    },
+    {
+      "id": "w30",
+      "from": "g33",
+      "to": "top-16",
+      "color": "blue"
+    },
+    {
+      "id": "w31",
+      "from": "g34",
+      "to": "top-17",
+      "color": "blue"
+    },
+    {
+      "id": "w32",
+      "from": "g38",
+      "to": "top-18",
+      "color": "blue"
+    },
+    {
+      "id": "w33",
+      "from": "a49",
+      "to": "top+13",
+      "color": "red"
+    },
+    {
+      "id": "w34",
+      "from": "g51",
+      "to": "top+14",
+      "color": "red"
+    },
+    {
+      "id": "w35",
+      "from": "g52",
+      "to": "top+15",
+      "color": "red"
+    },
+    {
+      "id": "w36",
+      "from": "g56",
+      "to": "top-19",
+      "color": "black"
+    },
+    {
+      "id": "w37",
+      "from": "g53",
+      "to": "top-20",
+      "color": "black"
+    },
+    {
+      "id": "w38",
+      "from": "g60",
+      "to": "top-21",
+      "color": "black"
+    },
+    {
+      "id": "w39",
+      "from": "g55",
+      "to": "top+16",
+      "color": "orange"
+    },
+    {
+      "id": "w40",
+      "from": "g49",
+      "to": "top-22",
+      "color": "blue"
+    },
+    {
+      "id": "w41",
+      "from": "g50",
+      "to": "top-23",
+      "color": "blue"
+    },
+    {
+      "id": "w42",
+      "from": "g54",
+      "to": "top-24",
+      "color": "blue"
+    }
+  ]
+}

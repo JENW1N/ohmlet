@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "name": "555 LED blinker (~1.5 Hz)",
+  "description": "Classic NE555 astable multivibrator blinking a red LED at about 1.5 Hz. R1 (10k) runs from VCC to DISCH, R2 (43k) from DISCH to THRES, and C1 (10uF) from THRES to ground, with TRIG tied to THRES: f = 1.44/((R1+2*R2)*C1) = 1.44/(96k*10uF) = 1.5 Hz. OUT drives the LED through a 470R series resistor, and a scope probe on channel 1 watches the OUT square wave.",
+  "components": [
+    { "id": "PS1", "type": "power_supply", "params": { "voltage": 5 } },
+    { "id": "U1", "type": "ne555", "at": "f10" },
+    { "id": "R1", "type": "resistor", "params": { "resistance": 10000 }, "holes": ["c10", "c11"] },
+    { "id": "R2", "type": "resistor", "params": { "resistance": 43000 }, "holes": ["b11", "b12"] },
+    { "id": "C1", "type": "capacitor", "params": { "capacitance": 1e-5, "polarized": true }, "holes": ["a12", "top-2"] },
+    { "id": "R3", "type": "resistor", "params": { "resistance": 470 }, "holes": ["g12", "g15"] },
+    { "id": "D1", "type": "led", "params": { "color": "red" }, "holes": ["h15", "top-3"] },
+    { "id": "PR1", "type": "scope_probe", "params": { "channel": 1 }, "holes": ["i12"] }
+  ],
+  "wires": [
+    { "id": "w1", "from": "PS1:+", "to": "top+0", "color": "red" },
+    { "id": "w2", "from": "PS1:-", "to": "top-0", "color": "black" },
+    { "id": "w3", "from": "b10", "to": "top+1", "color": "red" },
+    { "id": "w4", "from": "g10", "to": "top-1", "color": "black" },
+    { "id": "w5", "from": "g13", "to": "top+2", "color": "red" },
+    { "id": "w6", "from": "g11", "to": "c12", "color": "yellow" }
+  ]
+}

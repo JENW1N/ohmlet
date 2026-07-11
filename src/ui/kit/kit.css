@@ -1,0 +1,1597 @@
+/* ==========================================================================
+   Breadboard Studio — Liquid Glass design-system kit (kit.css)
+
+   Imported once by src/ui/kit/index.ts. Purely ADDITIVE to src/ui/styles.css
+   (whose :root tokens stay untouched). All kit selectors use the `lg-`
+   prefix; all kit custom properties use `--ios-*` / `--label*` / `--fill*` /
+   `--separator` / `--lg-*` so nothing collides with the legacy `--bg/--text`
+   tokens.
+
+   THE MATERIAL (DESIGN.md §1 — WWDC25 Liquid Glass, not frosted blur):
+   - Tier L (lens): dock, status capsule, the topmost sheet's GRABBER BAND
+     (mobile; desktop panels lens whole), the empty-state card. Chromium
+     gets true edge REFRACTION — an SVG displacement map
+     (src/ui/kit/glass/GlassDefs.tsx) bends the backdrop at the perimeter
+     via `backdrop-filter: blur() saturate() url(#lg-lens-*)`,
+     armed by the `lg-lens-on` class on <html>. WebKit/Gecko keep the rich
+     blur recipe — they parse url() in backdrop-filter but drop the whole
+     declaration at paint, so the lens is JS-gated, never @supports-gated.
+     `?lens=off` forces the fallback for verification.
+   - Tier R (rim + specular, ALL engines): every surface gets the
+     bent-light rim (1.5px conic-gradient ring, masked to the border) +
+     inner slab shadows; tracked surfaces (incl. toast pills and the
+     dock's sliding selection bubble) get the pointer-following specular
+     sheen (glass/useSpecular.ts writes --lg-spec-* props).
+   - Tier S (static glass): wire strip / undo pill / nested cards — rim +
+     tint, NO backdrop-filter (they stack; budget below). ActionSheet
+     cards are the CLEAR variant of this tier (baked dimmer + modal scrim).
+   - TONE tier (orthogonal, DESIGN.md §1 behavior 6): the floating
+     platters — dock, status capsule, empty-state card — adapt to the
+     backdrop. glass/adapt.ts samples the scene behind them (~2.6Hz) and
+     writes --lg-lum (continuous; drives the adaptive ambient shadow) +
+     .is-tone-light (hysteresis): the .lg-tone light-glass layer fades in
+     and every ink prop flips dark. Never under reduced transparency;
+     `?tone=off` is the verification flag.
+
+   Perf rules baked in (DESIGN.md §7): every transition/animation here is
+   transform or opacity only; backdrop-filter only on `.lg-surface`; blur
+   capped at 22px (12–16px on lensed surfaces); displacement maps are baked
+   once at startup, never per-frame.
+
+   ≤4 concurrent backdrop-filters AND ≤3 concurrent LENSED surfaces (worst
+   reachable stacks, by construction):
+   - toasts + the wire color strip render WITHOUT blur;
+   - the hidden status-capsule layer drops its blur during the crossfade;
+   - the dock hides (visibility) while any sheet rests ≥ ~half or is modal;
+   - the mobile sheet is a 44px lens BAND (lg-lens-band, flat-bottom map)
+     over a regular-blur body — never a sheet-sized displacement;
+   - ActionSheets are bare; their clear-variant cards are UNFILTERED on
+     mobile (baked dimmer + always-on modal scrim carry legibility) and
+     near-opaque inside desktop panels;
+   - STACKED regular sheets (Parts open + Properties auto-presented by a
+     selection): only the TOPMOST keeps its filters — Sheet.tsx recesses
+     every regular sheet below it (.lg-glass-recessed: mobile sheds
+     band+body filters and goes near-opaque behind the topmost sheet;
+     desktop panels keep the 22px blur but shed the url() lens).
+   Worst cases: sheet at peek (band+body) + dock + capsule = 4 filters /
+   3 lenses; empty-state card + dock + capsule = 3 filters / 3 lenses;
+   ActionSheet (2 clear cards) + underlying sheet (band+body) + capsule
+   = 3 filters / 2 lenses; recessed sheet (0) + topmost sheet at peek
+   (band+body) + dock + capsule = 4 filters / 3 lenses; desktop recessed
+   panel + topmost panel + rail + capsule = 4 filters / 3 lenses.
+   ========================================================================== */
+
+:root {
+  /* ---- iOS dark palette (DESIGN.md §1) ---- */
+  --ios-blue: #0a84ff;
+  --ios-green: #30d158;
+  --ios-red: #ff453a;
+  --ios-orange: #ff9f0a;
+  --ios-yellow: #ffd60a;
+  --ios-teal: #64d2ff;
+  --ios-purple: #bf5af2;
+  --label: rgba(255, 255, 255, 0.92);
+  --label-2: rgba(255, 255, 255, 0.64);
+  --label-3: rgba(255, 255, 255, 0.38);
+  --separator: rgba(255, 255, 255, 0.1);
+  --fill: rgba(120, 120, 128, 0.24);
+  --fill-2: rgba(120, 120, 128, 0.16);
+
+  /* ---- type ---- */
+  --lg-font: -apple-system, BlinkMacSystemFont, system-ui, 'SF Pro Text',
+    'Segoe UI', Roboto, sans-serif;
+
+  /* ---- the one spring + durations (DESIGN.md §1 Motion) ---- */
+  --lg-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --lg-dur-press: 120ms;
+  --lg-dur-control: 200ms;
+  --lg-dur-dock: 380ms;
+  --lg-dur-sheet: 420ms;
+
+  /* ---- safe-area insets (composable) ---- */
+  --lg-safe-top: env(safe-area-inset-top, 0px);
+  --lg-safe-right: env(safe-area-inset-right, 0px);
+  --lg-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --lg-safe-left: env(safe-area-inset-left, 0px);
+
+  /* ---- concentric corner geometry (DESIGN.md §1) ----
+     Children sitting `inset` inside a rounded parent use
+     calc(parent radius - inset) so the curves share a center. */
+  --lg-radius-surface: 22px; /* sheets, cards, capsule */
+  --lg-radius-dock: 26px;
+  --lg-radius-control: 9px; /* segmented / stepper tracks */
+  --lg-concentric-inset: 6px;
+  /* nested cards sit ~6px inside a 22px surface: 22 − 6 = 16 (ONE radius for
+     every in-sheet card — lists, part cards, AI cards, prompt card) */
+  --lg-radius-card: calc(var(--lg-radius-surface) - var(--lg-concentric-inset));
+  --lg-radius-field: 12px; /* recessed text-input wells */
+
+  /* ---- adaptive ink (legibility over the bright board) ---- */
+  --lg-ink-shadow: 0 1px 2px rgba(8, 10, 14, 0.3);
+}
+
+/* ==========================================================================
+   Material — Liquid Glass (DESIGN.md §1 is the binding spec)
+
+   .lg-surface        the regular variant: adaptive dark glass slab
+   .lg-glass-clear    the clear variant: thinner, with a baked dimming layer
+                      (HIG: clear REQUIRES dimming) — media-rich overlays only
+   .lg-lens-*         lens tier classes (Chromium edge refraction; the class
+                      doubles as the SVG filter id in GlassDefs.tsx)
+   .lg-specular       pointer-tracked sheen layer (glass/useSpecular.ts)
+   .lg-gel            gel press response (bloom + springy release)
+
+   NOTE every .lg-surface host must be POSITIONED (the rim + specular layers
+   are inset pseudo-elements). fixed/relative are both fine; static surfaces
+   get `position: relative` in their own rule (capsule, lists, groups).
+   ========================================================================== */
+
+/* Backdrop luminance, written by glass/adapt.ts on tone-adaptive platters
+   (dock, capsule, empty-state card). Registered so it TRANSITIONS — the
+   adaptive ambient shadow below glides with the scene instead of stepping
+   at the sampler cadence. initial-value 0.371 lands the shadow exactly on
+   the classic 0.45 alpha for every non-adaptive surface. */
+@property --lg-lum {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.371;
+}
+
+/* The regular material. Bounded surfaces only — never full-screen. */
+.lg-surface {
+  background: linear-gradient(
+    180deg,
+    rgba(40, 44, 56, 0.58),
+    rgba(24, 26, 34, 0.5)
+  );
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  /* ADAPTIVE ambient depth (alpha deepens over bright backdrops — Apple's
+     "adaptive shadows"; 0.45 at the neutral default) + top bent-light +
+     slab thickness (soft inner shadow rising from the bottom edge) +
+     inner micro-rim */
+  box-shadow: 0 12px 40px rgba(0, 0, 0, calc(0.32 + var(--lg-lum, 0.371) * 0.35)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -10px 22px -14px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+  border-radius: var(--lg-radius-surface);
+  color: var(--label);
+  font-family: var(--lg-font);
+  text-shadow: var(--lg-ink-shadow);
+}
+
+/* The edge-refraction RIM (all engines): a 1.5px ring of "bent light" —
+   bright where the virtual key light enters (top-left), a cool then warm
+   fringe on the flanks — masked so only the band paints. Reads as the lens
+   even where the real displacement isn't available. The stop energies are
+   custom props (defaults = the regular surface) so NESTED surfaces
+   (.lg-card, in-sheet lists, the segmented thumb, the slider knob) wear the
+   SAME ring at reduced energy instead of a flat border. `.lg-rim` grants
+   the ring to non-.lg-surface hosts (toast pills, the dock bubble) —
+   the host must be positioned. */
+.lg-surface::before,
+.lg-rim::before,
+.lg-card::before,
+.lg-seg-thumb::before,
+.lg-slider-knob::before {
+  content: '';
+  position: absolute;
+  inset: -0.5px;
+  border-radius: inherit;
+  padding: var(--lg-rim-w, 1.5px);
+  background: conic-gradient(
+    from 205deg,
+    rgba(255, 255, 255, var(--lg-rim-hi, 0.38)),
+    rgba(255, 255, 255, 0.06) 22%,
+    rgba(160, 190, 255, var(--lg-rim-cool, 0.16)) 38%,
+    rgba(255, 255, 255, var(--lg-rim-mid, 0.26)) 52%,
+    rgba(255, 255, 255, 0.05) 72%,
+    rgba(255, 222, 180, var(--lg-rim-warm, 0.13)) 86%,
+    rgba(255, 255, 255, var(--lg-rim-hi, 0.38))
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ---- Tier S: the nested glass card ------------------------------------
+   The in-sheet material. Cards, chips hosts and floating pills that sit ON
+   an already-lensed surface (or float small over the scene) read as a
+   thinner slab of the same glass: bent-light rim at nested energy + slab
+   inset shadows + translucent tint — NEVER their own backdrop-filter (the
+   ≤4-blur budget lives with the big surfaces). Components combine it with
+   their own background/radius overrides where needed. */
+.lg-card {
+  position: relative;
+  border-radius: var(--lg-radius-card);
+  background: linear-gradient(
+    180deg,
+    rgba(126, 131, 148, 0.18),
+    rgba(99, 103, 120, 0.1)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -8px 18px -12px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+  --lg-rim-hi: 0.28;
+  --lg-rim-mid: 0.18;
+  --lg-rim-cool: 0.12;
+  --lg-rim-warm: 0.1;
+  --lg-rim-w: 1px;
+}
+
+/* Recessed input well: text fields sit INTO the glass (search, numeric
+   fields, API key, JSON paste) — the inverse of the card slab. */
+.lg-well {
+  border: none;
+  background: rgba(16, 18, 26, 0.32);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    0 0.5px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* The clear variant: permanently more transparent, so it carries its own
+   dimming layer (bottom paint) and a stronger ink shadow. Use ONLY over
+   media-rich content with bold foreground (wire swatches, icon pills). */
+.lg-glass-clear {
+  background: linear-gradient(
+      180deg,
+      rgba(36, 40, 52, 0.3),
+      rgba(20, 22, 30, 0.26)
+    ),
+    rgba(10, 12, 18, 0.24);
+  --lg-ink-shadow: 0 1px 3px rgba(8, 10, 14, 0.65);
+}
+
+/* Hairline border alone (for nested cards that must not stack blur). */
+.lg-hairline {
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+}
+
+/* ---- Tier L: the lens (Chromium only) --------------------------------
+   GlassDefs.tsx injects #lg-lens-* displacement filters and arms
+   `lg-lens-on` on <html> once the maps are baked. Each class pairs a
+   surface with the filter tuned for its nominal size (refraction
+   concentrates in an 11–18px edge bezel; the center stays neutral).
+   Lensed surfaces thin their paint — the refraction itself provides the
+   separation — and strengthen the ink shadow to hold legibility. */
+.lg-lens-on .lg-lens {
+  background: linear-gradient(
+    180deg,
+    rgba(40, 44, 56, 0.42),
+    rgba(24, 26, 34, 0.35)
+  );
+  --lg-ink-shadow: 0 1px 3px rgba(8, 10, 14, 0.55);
+}
+.lg-lens-on .lg-lens-capsule {
+  backdrop-filter: blur(12px) saturate(170%) url(#lg-lens-capsule);
+}
+.lg-lens-on .lg-lens-dock {
+  backdrop-filter: blur(12px) saturate(170%) url(#lg-lens-dock);
+}
+.lg-lens-on .lg-lens-card {
+  backdrop-filter: blur(14px) saturate(170%) url(#lg-lens-card);
+}
+.lg-lens-on .lg-lens-sheet {
+  backdrop-filter: blur(16px) saturate(170%) url(#lg-lens-sheet);
+}
+/* the mobile sheet's grabber band: flat-bottom map (no bend at the seam
+   where it meets the regular-material body below) */
+.lg-lens-on .lg-lens-band {
+  backdrop-filter: blur(14px) saturate(170%) url(#lg-lens-band);
+}
+
+/* ---- Tone adaptation: the light/dark platter flip ----------------------
+   glass/adapt.ts samples the live scene behind each registered floating
+   platter (dock, status capsule, empty-state card) and writes --lg-lum
+   (continuous — drives the adaptive ambient shadow above) plus the
+   .is-tone-light state (hysteresis + 2-sample vote). The light state is a
+   real second glass, not a tint swap: a light platter layer (.lg-tone, a
+   child under the rim/specular/content) fades in over the dark paint —
+   the saturated blurred backdrop still reads through both — and every ink
+   custom prop flips dark so symbols stay visible, independent of the
+   app's (dark) theme. Sheets/panels/nested cards stay regular dark glass.
+   The flip transition is opacity/color only; --lg-lum transitions via its
+   @property registration. */
+.lg-tone-adaptive {
+  /* hosts must be their own stacking context so the z:-1 tone layer can sit
+     above the surface paint, below rim + content (backdrop-filter already
+     isolates; this also covers fallback/flattened paths) */
+  isolation: isolate;
+  transition: --lg-lum 460ms linear;
+}
+.lg-tone {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  /* light glass: bright crown thinning toward the base, like the dark slab */
+  background: linear-gradient(
+    180deg,
+    rgba(252, 253, 255, 0.8),
+    rgba(232, 236, 243, 0.7)
+  );
+  opacity: 0;
+  transition: opacity 340ms var(--lg-spring);
+  pointer-events: none;
+}
+.is-tone-light .lg-tone,
+.is-tone-light.lg-tone-adaptive > .lg-tone {
+  opacity: 1;
+}
+/* ink + hairlines flip dark on the light platter (custom props inherit
+   into the capsule layers / dock items / card content) */
+.is-tone-light {
+  --label: rgba(16, 18, 26, 0.92);
+  --label-2: rgba(22, 25, 35, 0.62);
+  --label-3: rgba(22, 25, 35, 0.4);
+  --separator: rgba(20, 22, 30, 0.12);
+  --fill: rgba(80, 84, 100, 0.2);
+  --fill-2: rgba(80, 84, 100, 0.13);
+  --lg-ink-shadow: 0 1px 2px rgba(255, 255, 255, 0.32);
+}
+/* the lensed thin-paint rule sets a STRONGER dark ink shadow on the element
+   itself — out-specify it for the light state */
+.lg-lens-on .is-tone-light .lg-lens,
+.lg-lens-on .is-tone-light.lg-lens {
+  --lg-ink-shadow: 0 1px 2px rgba(255, 255, 255, 0.32);
+}
+/* light slab finish: brighter edge, lighter inner thickness shadow (the
+   adaptive ambient layer keeps deepening with --lg-lum over bright scenes) */
+.is-tone-light .lg-surface,
+.lg-surface.is-tone-light {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, calc(0.18 + var(--lg-lum, 0.371) * 0.32)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -10px 22px -14px rgba(0, 0, 0, 0.22),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
+}
+/* dock selection bubble: the white mini-lens vanishes on light glass —
+   flip it to a shaded chip (iOS light tab-bar selection) */
+.is-tone-light .lg-dock-bubble {
+  background: linear-gradient(
+    180deg,
+    rgba(28, 31, 42, 0.16),
+    rgba(28, 31, 42, 0.08) 55%,
+    rgba(28, 31, 42, 0.11)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -4px 8px -5px rgba(0, 0, 0, 0.14),
+    inset 0 0 0 0.5px rgba(20, 22, 30, 0.1);
+  --lg-rim-hi: 0.5;
+  --lg-rim-mid: 0.3;
+}
+
+/* ---- Specular: the traveling highlight --------------------------------
+   glass/useSpecular.ts (shared singleton tracker) writes --lg-spec-x/y
+   (surface-local px) and --lg-spec-o (proximity energy 0..1) on registered
+   surfaces; press bloom (gel.ts) reuses the same props on .lg-gel
+   controls. Transform-only motion; the short opacity transition makes the
+   glow trail organically. */
+.lg-specular {
+  overflow: hidden;
+}
+.lg-specular::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--lg-spec-size, 220px);
+  height: var(--lg-spec-size, 220px);
+  margin: calc(var(--lg-spec-size, 220px) / -2) 0 0
+    calc(var(--lg-spec-size, 220px) / -2);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.08) 48%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  opacity: calc(var(--lg-spec-o, 0) * 0.7);
+  transform: translate3d(var(--lg-spec-x, -9999px), var(--lg-spec-y, 0px), 0);
+  transition: opacity 160ms linear;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+/* gel press: the specular BLOOMS from the touch point (gel.ts sets the
+   props from the pointerdown coordinates) */
+.lg-gel[data-pressed='true']::after,
+.lg-capsule-hit[data-pressed='true'] .lg-capsule:not(.is-hidden)::after {
+  opacity: 0.55;
+  transition-duration: 60ms;
+}
+/* phones without permission-free orientation: slow ambient sheen instead */
+.lg-specular.is-ambient::after {
+  opacity: 0.14;
+  animation: lg-spec-drift 16s ease-in-out infinite alternate;
+}
+@keyframes lg-spec-drift {
+  from {
+    transform: translate3d(-40px, 34px, 0);
+  }
+  to {
+    transform: translate3d(320px, -12px, 0);
+  }
+}
+
+/* Concentric child radius: calc(parent radius - inset). Parents set
+   --lg-radius-parent (and optionally --lg-concentric-inset). */
+.lg-concentric {
+  border-radius: calc(
+    var(--lg-radius-parent, var(--lg-radius-surface)) -
+      var(--lg-concentric-inset)
+  );
+}
+
+/* ==========================================================================
+   Type scale (px sizes from DESIGN.md §1 Typography)
+   ========================================================================== */
+
+.lg-largetitle { font: 700 28px/34px var(--lg-font); letter-spacing: -0.01em; color: var(--label); }
+.lg-title      { font: 600 22px/28px var(--lg-font); letter-spacing: -0.01em; color: var(--label); }
+.lg-headline   { font: 600 17px/22px var(--lg-font); color: var(--label); }
+.lg-body       { font: 400 17px/22px var(--lg-font); color: var(--label); }
+.lg-subhead    { font: 400 15px/20px var(--lg-font); color: var(--label-2); }
+.lg-caption    { font: 400 13px/18px var(--lg-font); color: var(--label-2); }
+.lg-caption2   { font: 400 11px/14px var(--lg-font); color: var(--label-3); }
+.lg-tabular    { font-variant-numeric: tabular-nums; }
+
+/* ==========================================================================
+   Press state + touch utilities
+   ========================================================================== */
+
+/* Press feedback: scale 0.96 + dim, 120ms spring. Components set
+   data-pressed on pointerdown (same frame); :active covers keyboard/mouse. */
+.lg-pressable {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: transform var(--lg-dur-press) var(--lg-spring),
+    opacity var(--lg-dur-press) var(--lg-spring);
+}
+.lg-pressable:active,
+.lg-pressable[data-pressed='true'] {
+  transform: scale(0.96);
+  opacity: 0.75;
+}
+/* gel controls dim less — the press reads through the specular bloom, and
+   release gets the springy 1.015 overshoot via glass/gel.ts (WAAPI) */
+.lg-gel:active,
+.lg-gel[data-pressed='true'] {
+  opacity: 0.92;
+}
+.lg-pressable:disabled,
+.lg-pressable[aria-disabled='true'] {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+.lg-pressable:focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: 2px;
+}
+
+/* Expand small controls to a >= 44x44 hit target without changing layout. */
+.lg-hit {
+  position: relative;
+}
+.lg-hit::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* ==========================================================================
+   Safe-area utilities
+   ========================================================================== */
+
+.lg-safe-top { padding-top: var(--lg-safe-top); }
+.lg-safe-bottom { padding-bottom: var(--lg-safe-bottom); }
+.lg-safe-x {
+  padding-left: var(--lg-safe-left);
+  padding-right: var(--lg-safe-right);
+}
+
+/* ==========================================================================
+   PressableButton — pill buttons
+   ========================================================================== */
+
+/* Pill buttons are small glass slabs: gradient fill + top bent-light +
+   inner micro-rim + slab shadow. md/lg get the gel press (specular bloom
+   from the touch point — PressableButton adds lg-specular + lg-gel; sm
+   keeps ::after for the 44px hit expansion instead). */
+.lg-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  border-radius: 999px;
+  font-family: var(--lg-font);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--label);
+  background: linear-gradient(
+    180deg,
+    rgba(130, 130, 138, 0.3),
+    rgba(110, 110, 120, 0.22)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    inset 0 -6px 12px -8px rgba(0, 0, 0, 0.35);
+  --lg-spec-size: 140px;
+}
+.lg-btn svg { flex: 0 0 auto; }
+.lg-btn-sm { min-height: 34px; padding: 0 14px; font-size: 15px; }
+.lg-btn-md { min-height: 44px; padding: 0 18px; font-size: 17px; }
+.lg-btn-lg { min-height: 50px; padding: 0 24px; font-size: 17px; }
+.lg-btn-filled {
+  background: linear-gradient(180deg, #3ea0ff, #0a84ff 52%, #0875e8);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(10, 132, 255, 0.35);
+}
+.lg-btn-tinted {
+  background: linear-gradient(
+    180deg,
+    rgba(10, 132, 255, 0.24),
+    rgba(10, 132, 255, 0.14)
+  );
+  color: var(--ios-blue);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 0.5px rgba(110, 180, 255, 0.22),
+    inset 0 -6px 12px -8px rgba(0, 0, 0, 0.3);
+}
+.lg-btn-plain {
+  background: transparent;
+  box-shadow: none;
+  color: var(--ios-blue);
+}
+.lg-btn-destructive {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 69, 58, 0.22),
+    rgba(255, 69, 58, 0.13)
+  );
+  color: var(--ios-red);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 0.5px rgba(255, 120, 110, 0.2),
+    inset 0 -6px 12px -8px rgba(0, 0, 0, 0.3);
+}
+/* Tinted button floating directly over the live 3D scene (empty-state card):
+   the bare blue wash + blue label washes out over the key-lit white board, so
+   it gets a dark glass underlay beneath the tint, a white label and a blue
+   hairline — legible over both the bright board and the dark desk. (DESIGN.md
+   §9: fix this button's contrast, never the scene exposure. No extra
+   backdrop-filter — plain layered background.) */
+.lg-btn-tinted.lg-btn-over-scene {
+  background:
+    linear-gradient(180deg, rgba(10, 132, 255, 0.34), rgba(10, 132, 255, 0.24)),
+    rgba(24, 26, 34, 0.82);
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 0.5px rgba(10, 132, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* ==========================================================================
+   Switch — 51x31 iOS toggle
+   ========================================================================== */
+
+.lg-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 51px;
+  height: 31px;
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  /* recessed gel well: the track sits INTO the glass */
+  background: rgba(16, 18, 26, 0.4);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.38),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    0 0.5px 0 rgba(255, 255, 255, 0.08);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.lg-switch:focus-visible { outline: 2px solid var(--ios-blue); outline-offset: 2px; }
+.lg-switch:disabled { opacity: 0.4; cursor: default; }
+/* green ON layer crossfades (opacity only, no bg-color paint anim) */
+.lg-switch-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #36d95f, #28c04f);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  transition: opacity var(--lg-dur-control) var(--lg-spring);
+}
+.lg-switch[aria-checked='true'] .lg-switch-fill { opacity: 1; }
+.lg-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%; /* concentric: 16 - 2 ≥ half of 27 → full round */
+  background: linear-gradient(180deg, #ffffff, #f0f1f4);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.08);
+  transition: transform var(--lg-dur-control) var(--lg-spring);
+  will-change: transform;
+}
+.lg-switch[aria-checked='true'] .lg-switch-knob { transform: translateX(20px); }
+.lg-switch[data-pressed='true'] .lg-switch-knob { transform: scale(1.08); }
+.lg-switch[aria-checked='true'][data-pressed='true'] .lg-switch-knob {
+  transform: translateX(20px) scale(1.08);
+}
+
+/* ==========================================================================
+   Segmented control
+   ========================================================================== */
+
+.lg-seg {
+  position: relative;
+  display: flex;
+  padding: 2px;
+  border-radius: var(--lg-radius-control);
+  /* recessed glass well, like the switch track */
+  background: rgba(16, 18, 26, 0.32);
+  box-shadow: inset 0 1px 2.5px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  font-family: var(--lg-font);
+}
+.lg-seg-thumb {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  height: calc(100% - 4px);
+  /* concentric with the 9px track at 2px padding */
+  border-radius: calc(var(--lg-radius-control) - 2px);
+  /* a floating glass chip: gradient fill + bent-light rim (shared conic
+     ring via .lg-seg-thumb::before, tuned down for the small slab) */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.26),
+    rgba(255, 255, 255, 0.13)
+  );
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --lg-rim-hi: 0.3;
+  --lg-rim-mid: 0.16;
+  --lg-rim-cool: 0.14;
+  --lg-rim-warm: 0.1;
+  --lg-rim-w: 1px;
+  transition: transform var(--lg-dur-control) var(--lg-spring),
+    scale var(--lg-dur-press) var(--lg-spring);
+  will-change: transform;
+  pointer-events: none;
+}
+/* gel press on the SELECTED segment: the thumb squashes under the finger
+   (independent `scale` composes with the inline translate3d; engines
+   without :has()/scale simply skip the squash) */
+.lg-seg:has(> .lg-seg-item[aria-checked='true'][data-pressed='true']) .lg-seg-thumb {
+  scale: 0.93;
+}
+.lg-seg-item {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 10px;
+  border: none;
+  background: none;
+  border-radius: 7px;
+  font: 400 15px/20px var(--lg-font);
+  color: var(--label-2);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: opacity var(--lg-dur-press) var(--lg-spring);
+}
+.lg-seg-item[aria-checked='true'] { color: var(--label); font-weight: 600; }
+.lg-seg-item[data-pressed='true'] { opacity: 0.6; }
+.lg-seg-item:disabled { opacity: 0.35; cursor: default; }
+.lg-seg-item:focus-visible { outline: 2px solid var(--ios-blue); outline-offset: -2px; }
+
+/* ==========================================================================
+   SliderIOS
+   ========================================================================== */
+
+.lg-slider {
+  position: relative;
+  height: 44px;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.lg-slider.is-disabled { opacity: 0.4; pointer-events: none; }
+.lg-slider-track {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+  /* recessed gel groove — the track sits INTO the glass, like the switch */
+  background: rgba(16, 18, 26, 0.42);
+  box-shadow: inset 0 1px 1.5px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    0 0.5px 0 rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.lg-slider-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #3ea0ff, #0a84ff 60%);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.35);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  will-change: transform;
+}
+/* the knob is a tiny slab of the same glass: top-lit gradient, slab inner
+   shadows and the shared bent-light rim (cool/warm fringes read on white) */
+.lg-slider-knob {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  margin-top: -14px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffffff, #eef0f4);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.08);
+  --lg-rim-hi: 0;
+  --lg-rim-mid: 0;
+  --lg-rim-cool: 0.4;
+  --lg-rim-warm: 0.34;
+  --lg-rim-w: 1px;
+  will-change: transform;
+}
+.lg-slider-knob:focus-visible { outline: 2px solid var(--ios-blue); outline-offset: 3px; }
+/* the knob's tiny specular: a cool glint tracked by the shared pointer
+   tracker (SliderIOS registers this layer; bloomAt() refreshes it during
+   touch drags). Sized for the 28px knob; clipped by its own radius. */
+.lg-slider-knob-spec {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  --lg-spec-size: 40px;
+}
+.lg-slider-knob-spec::after {
+  background: radial-gradient(
+    closest-side,
+    rgba(186, 213, 255, 0.85),
+    rgba(186, 213, 255, 0.25) 52%,
+    rgba(186, 213, 255, 0) 74%
+  );
+}
+.lg-slider.is-dragging .lg-slider-knob-spec::after {
+  opacity: 0.65;
+  transition-duration: 60ms;
+}
+/* the value bubble is a floating nested-glass chip (Tier S — no blur) */
+.lg-slider-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 38px;
+  transform: translate(-50%, 4px);
+  padding: 5px 11px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, rgba(72, 76, 90, 0.97), rgba(52, 55, 66, 0.96));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  font: 600 15px/18px var(--lg-font);
+  font-variant-numeric: tabular-nums;
+  color: var(--label);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--lg-dur-press) var(--lg-spring),
+    transform var(--lg-dur-press) var(--lg-spring);
+}
+.lg-slider.is-dragging .lg-slider-bubble { opacity: 1; transform: translate(-50%, 0); }
+
+/* ==========================================================================
+   Stepper
+   ========================================================================== */
+
+.lg-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: var(--lg-radius-control);
+  /* recessed glass well, matching the segmented/switch tracks */
+  background: rgba(16, 18, 26, 0.32);
+  box-shadow: inset 0 1px 2.5px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  font-family: var(--lg-font);
+}
+.lg-stepper-btn {
+  width: 47px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--label);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: opacity var(--lg-dur-press) var(--lg-spring);
+}
+.lg-stepper-btn svg {
+  transition: transform var(--lg-dur-press) var(--lg-spring);
+}
+.lg-stepper-btn[data-pressed='true'] { background: rgba(255, 255, 255, 0.1); }
+.lg-stepper-btn[data-pressed='true'] svg { transform: scale(0.85); }
+.lg-stepper-btn:disabled { opacity: 0.35; cursor: default; }
+.lg-stepper-btn:focus-visible { outline: 2px solid var(--ios-blue); outline-offset: -2px; }
+.lg-stepper-sep { width: 1px; margin: 7px 0; background: var(--separator); flex: 0 0 auto; }
+.lg-stepper-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  padding: 0 10px;
+  font: 400 15px/20px var(--lg-font);
+  font-variant-numeric: tabular-nums;
+  color: var(--label);
+}
+
+/* ==========================================================================
+   ListGroup / ListRow — inset grouped lists
+   ========================================================================== */
+
+.lg-listgroup { font-family: var(--lg-font); }
+.lg-list-header {
+  padding: 0 16px 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.lg-list-footer { padding: 7px 16px 0; }
+.lg-list {
+  position: relative; /* rim layer (.lg-surface::before) needs a positioned host */
+  border-radius: var(--lg-radius-card); /* concentric: surface 22 − inset 6 */
+  overflow: hidden;
+  padding: 2px 0;
+}
+/* Lists nested inside a sheet/panel (i.e. nearly all of them): keep the
+   bent-light rim but shed the backdrop-filter (Tier S — the parent surface
+   already lenses the scene; ≤4 concurrent blurs) and swap the floating
+   drop shadow for the embedded nested-card slab. One recipe for every
+   sheet — the per-sheet overrides in PartsSheet/PropertiesSheet/asm CSS
+   are gone. */
+.lg-sheet .lg-list,
+.lg-panel .lg-list {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: linear-gradient(
+    180deg,
+    rgba(126, 131, 148, 0.18),
+    rgba(99, 103, 120, 0.1)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -8px 18px -12px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+  --lg-rim-hi: 0.28;
+  --lg-rim-mid: 0.18;
+  --lg-rim-cool: 0.12;
+  --lg-rim-warm: 0.1;
+  --lg-rim-w: 1px;
+}
+.lg-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  text-align: left;
+  font: 400 17px/22px var(--lg-font);
+  color: var(--label);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+button.lg-row { cursor: pointer; }
+button.lg-row[data-pressed='true'] { background: var(--fill-2); }
+button.lg-row:focus-visible { outline: 2px solid var(--ios-blue); outline-offset: -2px; }
+button.lg-row:disabled { opacity: 0.4; cursor: default; }
+/* inset separator (16px per DESIGN.md §3) */
+.lg-row:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 0;
+  top: 0;
+  height: 0.5px;
+  background: var(--separator);
+  pointer-events: none;
+}
+.lg-row-leading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: var(--ios-blue);
+}
+.lg-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.lg-row-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lg-row.is-destructive .lg-row-title { color: var(--ios-red); }
+.lg-row.is-destructive .lg-row-leading { color: var(--ios-red); }
+.lg-row-sub { font-size: 13px; line-height: 18px; }
+.lg-row-trailing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  color: var(--label-2);
+  font-variant-numeric: tabular-nums;
+}
+.lg-row-chevron { display: flex; color: var(--label-3); }
+
+/* ==========================================================================
+   Sheet — bottom sheet (mobile) + floating panel (desktop)
+   ========================================================================== */
+
+.lg-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+/* modal sheets (ActionSheet) stack above regular sheets AND their scrims,
+   so an outside tap during e.g. a delete confirm hits the modal scrim —
+   never the underlying Properties/More sheet or the canvas */
+.lg-sheet-scrim.is-modal {
+  z-index: 52;
+}
+.lg-sheet.is-modal {
+  z-index: 53;
+}
+.lg-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  border-radius: 22px 22px 0 0;
+  font-family: var(--lg-font);
+  color: var(--label);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+  outline: none;
+}
+/* The mobile sheet is a TWO-LAYER Liquid Glass slab (DESIGN.md §1 tier
+   budget): a 44px lens-tier grabber BAND — the scene visibly refracts
+   through its top corners and flanks (flat-bottom displacement map, so the
+   seam below stays neutral) — over a regular-material body (full 22px blur,
+   no displacement). The root is a transparent shell that carries the drag
+   handlers, the ambient drop shadow and (via .lg-specular) one shared sheen
+   layer + the overflow clip that trims both children's rim overruns. */
+.lg-sheet:not(.is-bare) {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden; /* also set by .lg-specular; keep it under reduced motion */
+}
+.lg-sheet.is-bare {
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+.lg-sheet .lg-sheet-band {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px; /* = the lg-lens-band nominal map height; a 44px grab target */
+  border-radius: 22px 22px 0 0;
+  border-bottom: none;
+  overflow: hidden; /* clips the rim's pushed-down bottom run */
+  cursor: grab;
+  /* thinner lens paint fading INTO the body's top color — a seamless pour
+     (this also overrides the generic `.lg-lens-on .lg-lens` thin paint) */
+  background: linear-gradient(
+    180deg,
+    rgba(40, 44, 56, 0.4),
+    rgba(40, 44, 56, 0.58)
+  );
+  /* top bent-light + micro-rim only — no bottom thickness shadow at the seam */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+}
+/* push the rim's bottom run below the band — only top + flanks ring */
+.lg-sheet .lg-sheet-band::before { bottom: -26px; }
+.lg-sheet .lg-sheet-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  border-top: none;
+  border-bottom: none; /* meets the viewport edge */
+  overflow: hidden; /* clips the rim's pushed-up top run */
+  /* the regular recipe, minus the ambient shadow (on the root) and the top
+     bent-light inset (the band owns the top edge) */
+  box-shadow: inset 0 -10px 22px -14px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+}
+/* push the rim's top run above the body — flanks continue to the seam */
+.lg-sheet .lg-sheet-body::before { top: -26px; }
+.lg-sheet-grabber {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--label-3);
+}
+.lg-sheet-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: hidden; /* toggled to auto at the highest snap by Sheet.tsx */
+  touch-action: none; /* toggled to pan-y at the highest snap */
+  overscroll-behavior: contain;
+  padding: 0 16px calc(var(--lg-safe-bottom) + 16px);
+}
+.lg-sheet-content::-webkit-scrollbar { display: none; }
+.lg-sheet-content { scrollbar-width: none; }
+
+/* desktop floating panel */
+.lg-panel {
+  position: fixed;
+  top: 16px;
+  bottom: 16px;
+  width: 360px;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--lg-font);
+  color: var(--label);
+  will-change: transform;
+  outline: none;
+}
+/* left panels clear the 70px dock rail (rail left 12px + width + 14px gap)
+   so the rail stays clickable for tab switching */
+.lg-panel-left { left: calc(var(--lg-safe-left) + 96px); }
+.lg-panel-right { right: calc(var(--lg-safe-right) + 16px); }
+.lg-panel-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+}
+
+/* ---- Stacked regular sheets: the recessed tier ------------------------
+   Two regular surfaces can be mounted at once (Parts open + Properties
+   auto-presented by a selection). Only the TOPMOST one keeps its
+   backdrop-filters — Sheet.tsx toggles this class from its presentation
+   stack (applyStackTiers), holding the ≤4-filter / ≤3-lens / ≤1-band
+   budget by construction:
+   - a recessed MOBILE sheet sits entirely behind the topmost bottom sheet,
+     so it sheds band+body filters and goes near-opaque (the
+     reduced-transparency slab — legible even if a sliver ever shows);
+   - a recessed DESKTOP panel stays visible beside the topmost one, so it
+     keeps the rich cross-engine blur recipe but sheds the url()
+     displacement lens + thin lens paint (worst stack: 2 panels + rail +
+     capsule = 4 filters / 3 lenses, exactly the caps). */
+.lg-sheet.lg-glass-recessed .lg-sheet-band,
+.lg-sheet.lg-glass-recessed .lg-sheet-body {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: linear-gradient(
+    180deg,
+    rgba(46, 50, 62, 0.97),
+    rgba(30, 32, 42, 0.96)
+  );
+}
+.lg-panel.lg-glass-recessed,
+.lg-lens-on .lg-panel.lg-glass-recessed {
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  background: linear-gradient(
+    180deg,
+    rgba(40, 44, 56, 0.58),
+    rgba(24, 26, 34, 0.5)
+  );
+  --lg-ink-shadow: 0 1px 2px rgba(8, 10, 14, 0.3);
+}
+
+/* ==========================================================================
+   ActionSheet
+   ========================================================================== */
+
+.lg-asheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+.lg-asheet-group {
+  position: relative; /* rim layer needs a positioned host */
+  border-radius: 14px;
+  overflow: hidden;
+}
+/* mobile: the cards are the CLEAR variant (ActionSheet.tsx adds
+   lg-glass-clear) WITHOUT backdrop-filter: two cards stack over an
+   already-filtered sheet (band+body), so the live board reads straight
+   through the glass. The HIG-required dimming is carried twice over: a
+   DEEPER baked dim than the strip variant + the 0.45 modal scrim
+   (SCRIM_MAX_MODAL in Sheet.tsx) that always sits behind them */
+.lg-sheet .lg-asheet-group {
+  background: linear-gradient(
+      180deg,
+      rgba(36, 40, 52, 0.3),
+      rgba(20, 22, 30, 0.26)
+    ),
+    rgba(10, 12, 18, 0.52);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+/* …but clear glass is licensed ONLY over media-rich backdrops (DESIGN.md
+   §1). A modal action sheet presented while a regular sheet is OPEN
+   (More → Clear board, Properties → Delete) floats over bright TEXT
+   rows, whose ghost stays readable through any tasteful paint-only dim
+   (even at 0.93 the 20px white rows re-emerge in the dark composite) —
+   so over an open sheet the cards go alert-thick, one step past the
+   scrimless desktop confirm panels. :has() no-ops harmlessly on engines
+   without support (they keep the dim + scrim above). */
+body:has(.lg-sheet:not(.is-modal)) .lg-sheet.is-modal .lg-asheet-group {
+  background: linear-gradient(180deg, rgba(52, 56, 68, 0.99), rgba(36, 38, 48, 0.98));
+}
+/* desktop: the confirm panel floats over an already-glassy panel + rail
+   WITHOUT a scrim — clear glass would wash out, so the card groups go
+   near-opaque instead (also holds the ≤4 backdrop-filter budget) */
+.lg-panel .lg-asheet-group {
+  background: linear-gradient(180deg, rgba(52, 56, 68, 0.96), rgba(36, 38, 48, 0.94));
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.lg-asheet-header {
+  padding: 12px 16px;
+  text-align: center;
+}
+.lg-asheet-title {
+  font: 600 13px/18px var(--lg-font);
+  color: var(--label-2);
+}
+.lg-asheet-message {
+  margin-top: 2px;
+  font: 400 13px/18px var(--lg-font);
+  color: var(--label-2);
+}
+.lg-asheet-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 57px;
+  padding: 0 16px;
+  border: none;
+  background: none;
+  font: 400 20px/24px var(--lg-font);
+  color: var(--ios-blue);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+.lg-asheet-btn[data-pressed='true'] { background: var(--fill-2); }
+.lg-asheet-btn:disabled { opacity: 0.4; cursor: default; }
+.lg-asheet-btn:focus-visible { outline: 2px solid var(--ios-blue); outline-offset: -2px; }
+.lg-asheet-btn.is-destructive { color: var(--ios-red); }
+.lg-asheet-btn.is-cancel { font-weight: 600; }
+.lg-asheet-header + .lg-asheet-btn::before,
+.lg-asheet-btn + .lg-asheet-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0.5px;
+  background: var(--separator);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Dock — floating glass tab bar / desktop rail
+   ========================================================================== */
+
+.lg-dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--lg-safe-bottom) + 12px);
+  transform: translateX(-50%);
+  /* above sheets (51): at low snaps (peek) the tabs stay visible AND
+     tappable over the sheet glass — Parts→Wire etc. work mid-placement */
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: var(--lg-radius-dock);
+  --lg-radius-parent: var(--lg-radius-dock);
+  font-family: var(--lg-font);
+  transition: opacity var(--lg-dur-control) var(--lg-spring), visibility 0s linear 0s;
+}
+/* a sheet resting ≥ ~half (or a modal action sheet) covers the dock area:
+   hide it entirely (Sheet.tsx toggles the body class) — iOS sheets cover
+   the tab bar, and visibility:hidden also sheds its backdrop-filter cost */
+body.lg-dock-covered .lg-dock {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--lg-dur-control) var(--lg-spring),
+    visibility 0s linear var(--lg-dur-control);
+}
+/* The selection bubble is a specular-lit mini-lens: convex glass paint +
+   bent-light ring (lg-rim at nested energy) + a tracked glint that re-bases
+   the BAR's --lg-spec-x/y (inherited custom props) into bubble space via
+   --lg-dock-bub-x/y (set by Dock.tsx alongside the slide transform).
+   @property registration lets the offsets TRANSITION on the house spring,
+   so the glint stays pinned under the pointer while the bubble slides.
+   Paint-only — a backdrop-filter here would bust the ≤4 filter budget. */
+@property --lg-dock-bub-x {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --lg-dock-bub-y {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+.lg-dock-bubble {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* concentric with the dock shell: 26 - 6 = 20 */
+  border-radius: calc(var(--lg-radius-parent) - var(--lg-concentric-inset));
+  overflow: hidden; /* clips the glint to the lens */
+  /* convex lens paint: brighter crown, thinner waist */
+  background: linear-gradient(
+    180deg,
+    rgba(150, 152, 164, 0.32),
+    rgba(118, 120, 132, 0.16) 55%,
+    rgba(126, 128, 140, 0.2)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -4px 8px -5px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.09);
+  --lg-rim-hi: 0.3;
+  --lg-rim-mid: 0.2;
+  --lg-rim-cool: 0.12;
+  --lg-rim-warm: 0.1;
+  --lg-rim-w: 1px;
+  transition: transform var(--lg-dur-dock) var(--lg-spring),
+    --lg-dock-bub-x var(--lg-dur-dock) var(--lg-spring),
+    --lg-dock-bub-y var(--lg-dur-dock) var(--lg-spring);
+  will-change: transform;
+  pointer-events: none;
+  opacity: 0;
+}
+/* the bubble's own specular glint, lit by the bar's tracked highlight */
+.lg-dock-bubble::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.34),
+    rgba(255, 255, 255, 0.09) 52%,
+    rgba(255, 255, 255, 0) 74%
+  );
+  opacity: calc(var(--lg-spec-o, 0) * 0.65);
+  transform: translate3d(
+    calc(var(--lg-spec-x, -9999px) - var(--lg-dock-bub-x, 0px)),
+    calc(var(--lg-spec-y, 0px) - var(--lg-dock-bub-y, 0px)),
+    0
+  );
+  transition: opacity 160ms linear;
+  pointer-events: none;
+}
+.lg-dock-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 58px;
+  height: 49px;
+  padding: 4px 8px 3px;
+  border: none;
+  background: none;
+  border-radius: 20px;
+  color: var(--label-2);
+  /* press recolor stays snappy; the tone flip glides via --label-2 */
+  transition: color 200ms linear;
+}
+.lg-dock-item[aria-selected='true'] { color: var(--ios-blue); }
+.lg-dock-item svg { display: block; }
+.lg-dock-label {
+  font: 500 11px/13px var(--lg-font);
+  letter-spacing: 0.01em;
+}
+/* desktop: vertical glass rail on the left */
+.lg-dock.is-rail {
+  left: calc(var(--lg-safe-left) + 12px);
+  right: auto;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 26px;
+}
+.lg-dock.is-rail .lg-dock-item { width: 58px; min-width: 0; }
+
+/* ==========================================================================
+   StatusCapsule — top-center floating pill (Dynamic-Island-like)
+   ========================================================================== */
+
+.lg-capsule-wrap {
+  position: fixed;
+  top: calc(var(--lg-safe-top) + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  /* Dynamic-Island-like: floats above sheets and their scrims so Run/Pause
+     stays reachable while a sheet is half-open (a scrim tap elsewhere still
+     dismisses) */
+  z-index: 55;
+  font-family: var(--lg-font);
+}
+.lg-capsule-hit {
+  display: grid;
+  justify-items: center;
+  align-items: start;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: transform var(--lg-dur-press) var(--lg-spring);
+  outline: none;
+}
+.lg-capsule-hit[data-pressed='true'] { transform: scale(0.96); }
+.lg-capsule-hit:focus-visible .lg-capsule:not(.is-hidden) {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: 2px;
+}
+.lg-capsule {
+  grid-area: 1 / 1;
+  position: relative; /* rim + specular layers need a positioned host */
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: 22px;
+  color: var(--label);
+  white-space: nowrap;
+  /* crossfade + translate between collapsed/expanded layers (no size anim) */
+  transition: opacity var(--lg-dur-control) var(--lg-spring),
+    transform var(--lg-dur-control) var(--lg-spring),
+    visibility 0s linear 0s;
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+.lg-capsule.is-hidden {
+  opacity: 0;
+  transform: translateY(-5px);
+  visibility: hidden;
+  pointer-events: none;
+  /* drop the blur immediately (not after the fade) so the 200ms crossfade
+     never paints two concurrent capsule backdrop-filters — the incoming
+     layer blurs the same backdrop, so the swap is invisible */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: opacity var(--lg-dur-control) var(--lg-spring),
+    transform var(--lg-dur-control) var(--lg-spring),
+    visibility 0s linear var(--lg-dur-control);
+}
+.lg-capsule.is-expanded {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding: 10px 18px;
+}
+.lg-capsule-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.lg-capsule-main {
+  font: 600 15px/20px var(--lg-font);
+  font-variant-numeric: tabular-nums;
+  transition: color 340ms linear; /* glides with the tone flip */
+}
+.lg-capsule-detail {
+  font: 400 13px/18px var(--lg-font);
+  color: var(--label-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+  transition: color 340ms linear;
+}
+.lg-capsule-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+/* ==========================================================================
+   Toast — small glass pill above the dock
+   ========================================================================== */
+
+.lg-toast-host {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--lg-safe-bottom) + 86px);
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  font-family: var(--lg-font);
+}
+.lg-toast {
+  position: relative; /* hosts the lg-rim ring + lg-specular sheen layers */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(86vw, 420px);
+  padding: 9px 16px;
+  border-radius: 999px;
+  /* rim+specular tier (DESIGN.md §1): bent-light ring (lg-rim) + tracked
+     sheen (Toast.tsx registers each pill), but NO backdrop-filter — toasts
+     stack (2 live + 1 leaving) and would blow the ≤4 concurrent-filter
+     budget (§7) */
+  background: linear-gradient(180deg, rgba(56, 60, 72, 0.94), rgba(38, 40, 50, 0.92));
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --lg-spec-size: 150px;
+  --lg-rim-hi: 0.3;
+  --lg-rim-mid: 0.2;
+  --lg-rim-cool: 0.12;
+  --lg-rim-warm: 0.1;
+  --lg-rim-w: 1px;
+  font: 400 15px/20px var(--lg-font);
+  color: var(--label);
+  text-align: center;
+  text-wrap: balance; /* wrap long hints to ≤2 tidy lines, never clip */
+  animation: lg-toast-in 260ms var(--lg-spring);
+  transition: opacity 200ms var(--lg-spring), transform 200ms var(--lg-spring);
+}
+.lg-toast svg { flex: 0 0 auto; }
+.lg-toast.is-leaving {
+  opacity: 0;
+  transform: translateY(6px);
+}
+@keyframes lg-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   Reduced motion — crossfade instead of slide, no self-animating sheen,
+   instant springs (JS paths check prefersReducedMotion(); gel.ts and
+   morph.ts no-op; CSS paths collapse via the vars)
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --lg-dur-press: 0.01ms;
+    --lg-dur-control: 0.01ms;
+    --lg-dur-dock: 0.01ms;
+    --lg-dur-sheet: 0.01ms;
+  }
+  /* the ambient drift self-animates — replace with a faint static sheen
+     (pointer-tracked highlights are input-driven and stay) */
+  .lg-specular.is-ambient::after {
+    animation: none;
+    opacity: 0.1;
+    transform: translate3d(64px, 8px, 0);
+  }
+  .lg-toast {
+    animation-duration: 0.01ms;
+    transition-duration: 120ms; /* fade-out is opacity-only: allowed */
+  }
+}
+
+/* ==========================================================================
+   Reduced transparency — flatten the material to near-opaque slabs; the
+   lens never arms here (GlassDefs checks the same media query)
+   ========================================================================== */
+
+@media (prefers-reduced-transparency: reduce) {
+  .lg-surface,
+  .lg-glass-clear,
+  .lg-sheet .lg-sheet-band,
+  .lg-sheet .lg-sheet-body {
+    background: linear-gradient(
+      180deg,
+      rgba(46, 50, 62, 0.97),
+      rgba(30, 32, 42, 0.96)
+    );
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  /* tone adaptation never engages here (adapt.ts checks the same query);
+     belt-and-braces for any stale class */
+  .lg-tone {
+    display: none;
+  }
+}

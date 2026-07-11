@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Maskable variant: full-bleed background, art inside the 80% safe zone -->
+  <rect width="512" height="512" fill="#15171c"/>
+  <rect x="106" y="166" width="300" height="180" rx="28" fill="#e9e4d6"/>
+  <rect x="132" y="188" width="248" height="8" rx="4" fill="#ff453a"/>
+  <rect x="132" y="318" width="248" height="8" rx="4" fill="#0a84ff"/>
+  <rect x="106" y="252" width="300" height="10" fill="#d4cebc"/>
+  <g fill="#3a3f4a">
+    <circle cx="150" cy="222" r="7"/><circle cx="192" cy="222" r="7"/><circle cx="234" cy="222" r="7"/><circle cx="276" cy="222" r="7"/><circle cx="318" cy="222" r="7"/><circle cx="360" cy="222" r="7"/>
+    <circle cx="150" cy="288" r="7"/><circle cx="192" cy="288" r="7"/><circle cx="234" cy="288" r="7"/><circle cx="276" cy="288" r="7"/><circle cx="318" cy="288" r="7"/><circle cx="360" cy="288" r="7"/>
+  </g>
+  <path d="M192 222 C 192 158, 318 158, 318 288" fill="none" stroke="#30d158" stroke-width="14" stroke-linecap="round"/>
+</svg>

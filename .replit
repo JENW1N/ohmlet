@@ -1,0 +1,15 @@
+run = ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+entrypoint = "index.html"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[deployment]
+build = ["npm", "run", "build"]
+publicDir = "dist"
+deploymentTarget = "static"

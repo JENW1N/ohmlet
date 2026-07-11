@@ -1,0 +1,409 @@
+/* ==========================================================================
+   PropertiesSheet — inspector styles (prs- prefix).
+   Additive to kit.css; transform/opacity animations only.
+
+   Material: nested ListGroups get the Tier-S nested-glass recipe from
+   kit.css (`.lg-sheet .lg-list` — rim + slab insets, NO backdrop-filter);
+   inputs are recessed `.lg-well`s; chips/cards wear `.lg-card`. Nothing
+   here adds a backdrop-filter (DESIGN.md ≤4-blur budget).
+   ========================================================================== */
+
+.prs-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 2px;
+}
+
+.prs-mono {
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+}
+
+/* ---- header: big label + monospace id + type subtitle ---- */
+
+.prs-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px 4px 0;
+}
+.prs-head-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.prs-head-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prs-head-id {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 7px; /* concentric: control 9 − 2 */
+  background: linear-gradient(180deg, rgba(126, 131, 148, 0.22), rgba(99, 103, 120, 0.13));
+  border: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07);
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--label-2);
+}
+.prs-head-trailing {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+.prs-head-sub {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- live badge ---- */
+
+.prs-live {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(48, 209, 88, 0.16);
+  color: var(--ios-green);
+  font: 600 10px/14px var(--lg-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+
+.prs-label-wrap {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- stacked parameter rows (label line + control line) ---- */
+
+.prs-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 9px;
+  padding-top: 11px;
+  padding-bottom: 12px;
+}
+.prs-stack-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.prs-stack-value {
+  flex: 0 0 auto;
+  color: var(--label-2);
+  font-size: 15px;
+}
+.prs-stack-ctl {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---- inputs ---- */
+
+/* recessed glass well (recipe: .lg-well in kit.css; restated here because
+   the input needs its own layout/typography anyway) */
+.prs-input {
+  min-width: 0;
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--lg-radius-field);
+  background: rgba(16, 18, 26, 0.32);
+  box-shadow: inset 0 1.5px 3px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    0 0.5px 0 rgba(255, 255, 255, 0.06);
+  color: var(--label);
+  font: 400 17px/22px var(--lg-font);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.prs-input:focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: -1px;
+}
+.prs-input::-webkit-inner-spin-button,
+.prs-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.prs-input[type='number'] {
+  -moz-appearance: textfield;
+}
+.prs-input-text {
+  text-align: left;
+}
+
+.prs-numline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prs-numline .prs-input {
+  max-width: 150px;
+}
+.prs-unit {
+  flex: 0 0 auto;
+}
+.prs-numline-stepper {
+  display: inline-flex;
+  margin-left: auto;
+}
+.prs-nodrag {
+  touch-action: none;
+}
+
+/* ---- E12 chip-scroller ---- */
+
+.prs-chips {
+  display: flex;
+  gap: 8px;
+  margin: 0 -16px;
+  padding: 2px 16px;
+  overflow-x: auto;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.prs-chips::-webkit-scrollbar {
+  display: none;
+}
+/* E12 chips: tiny nested-glass slabs (gradient + top bent-light + micro-rim
+   — no conic ring: the ::after slot is the 44px hit expansion) */
+.prs-chip {
+  position: relative;
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(130, 135, 152, 0.26), rgba(102, 106, 122, 0.16));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    inset 0 -4px 8px -6px rgba(0, 0, 0, 0.35);
+  color: var(--label-2);
+  font: 600 14px/18px var(--lg-font);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: transform var(--lg-dur-press) var(--lg-spring),
+    opacity var(--lg-dur-press) var(--lg-spring);
+}
+.prs-chip[data-pressed='true'] {
+  transform: scale(0.96);
+  opacity: 0.75;
+}
+.prs-chip[aria-pressed='true'] {
+  background: linear-gradient(180deg, rgba(56, 152, 255, 0.32), rgba(10, 132, 255, 0.2));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 0.5px rgba(110, 180, 255, 0.35),
+    inset 0 -4px 8px -6px rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+.prs-chip:focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: 2px;
+}
+/* vertical-only 44px hit expansion (chips sit alone in their strip) */
+.prs-chip::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+/* ---- dropdown row (native select overlaid on an iOS detail row) ---- */
+
+.prs-selectrow {
+  position: relative;
+}
+.prs-select-value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  color: var(--label-2);
+  font-size: 17px;
+}
+.prs-select-value svg {
+  color: var(--label-3);
+}
+.prs-select-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  font-size: 17px; /* keeps iOS from zooming on focus */
+}
+.prs-select-cover:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--ios-blue);
+  outline-offset: -2px;
+  color: transparent;
+  background: transparent;
+}
+
+/* ---- the giant HOLD button (pushbutton) ---- */
+
+.prs-holdrow {
+  justify-content: center;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+/* the giant HOLD button is a thick blue glass puck: tinted gradient over a
+   dark underlay, slab inner shadows + the shared rim (via .lg-card hook) */
+.prs-hold {
+  position: relative;
+  width: 116px;
+  height: 116px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(46, 148, 255, 0.30), rgba(10, 132, 255, 0.16)),
+    rgba(18, 22, 32, 0.35);
+  box-shadow: inset 0 0 0 2px rgba(10, 132, 255, 0.5),
+    inset 0 2px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -14px 24px -16px rgba(0, 0, 0, 0.55),
+    0 6px 22px rgba(0, 0, 0, 0.3);
+  color: #bcdcff;
+  font: 700 17px/22px var(--lg-font);
+  letter-spacing: 0.09em;
+  text-shadow: 0 1px 2px rgba(8, 10, 14, 0.45);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  transition: transform var(--lg-dur-press) var(--lg-spring),
+    opacity var(--lg-dur-press) var(--lg-spring);
+  --lg-rim-cool: 0.3;
+  --lg-rim-warm: 0.12;
+}
+.prs-hold.is-down {
+  background: linear-gradient(180deg, #3ea0ff, #0a84ff 56%, #0875e8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.25),
+    0 4px 18px rgba(10, 132, 255, 0.4);
+  color: #fff;
+  transform: scale(0.93);
+}
+.prs-hold:focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: 4px;
+}
+
+/* ---- pin → hole table ---- */
+
+.prs-pin {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 7px 16px;
+  font: 400 15px/20px var(--lg-font);
+  color: var(--label);
+}
+.prs-pin:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 0;
+  top: 0;
+  height: 0.5px;
+  background: var(--separator);
+  pointer-events: none;
+}
+.prs-pin-num {
+  flex: 0 0 22px;
+  color: var(--label-3);
+  font-size: 13px;
+  text-align: right;
+}
+.prs-pin-name {
+  flex: 0 0 auto;
+  min-width: 52px;
+  font-weight: 600;
+}
+.prs-pin-hole {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--label-2);
+}
+.prs-pin-v {
+  flex: 0 0 auto;
+  min-width: 64px;
+  text-align: right;
+  color: var(--ios-teal);
+  font-size: 15px;
+}
+
+/* ---- telemetry extras ---- */
+
+.prs-burned {
+  padding: 11px 16px;
+  border-radius: var(--lg-radius-card);
+  background: linear-gradient(180deg, rgba(255, 86, 74, 0.2), rgba(255, 69, 58, 0.11));
+  border: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 0.5px rgba(255, 120, 110, 0.32),
+    inset 0 -6px 14px -10px rgba(0, 0, 0, 0.4);
+  color: var(--ios-red);
+  font: 400 14px/19px var(--lg-font);
+}
+
+/* ---- wire bits ---- */
+
+.prs-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(255, 255, 255, 0.35);
+  flex: 0 0 auto;
+}
+.prs-swatch-lg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ---- empty state ---- */
+
+.prs-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  text-align: center;
+  padding: 28px 12px 12px;
+}
+.prs-empty p {
+  margin: 0;
+}

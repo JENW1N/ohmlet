@@ -1,0 +1,31 @@
+Breadboard Studio — source package
+===================================
+
+A 3D breadboard circuit simulator (web app): real-time analog + digital
+simulation, AI circuit generation, Apple "Liquid Glass" UI, three render
+modes (Performance / Enhanced / ray-traced Studio).
+
+QUICK START
+  npm install
+  npm run dev        # http://localhost:5173  (use Chrome for the full glass lens)
+
+OTHER COMMANDS
+  npm run build      # production build into dist/
+  npm run preview    # serve the built bundle
+  npm run typecheck  # tsc --noEmit
+  npm run test       # vitest (546 tests)
+
+AI CIRCUIT GENERATION
+  Open the More sheet → Settings → paste an Anthropic API key. The key is
+  stored only in your browser (localStorage) and is sent only to
+  api.anthropic.com. Then use the AI tab, e.g. "make me a circuit that
+  displays a date".
+
+DOCS
+  README.md        — full feature tour + component library
+  ARCHITECTURE.md  — system design, simulation engine, DSL/JSON format
+  DESIGN.md        — UI design language (Liquid Glass material spec)
+  src/three/render-modes/RENDER-MODES.md — the three render tiers
+
+NOT INCLUDED (regenerated/large): node_modules/, dist/, shots/ (screenshots).
+The preview/ folder has a few signature screenshots.

@@ -1,0 +1,87 @@
+/* ==========================================================================
+   RotateButton — small circular glass button, right edge in the placement-
+   hint-toast band above the dock, mirroring the UndoPill's recipe on the
+   left. Springs in/out via transform + opacity only (house spring; reduced
+   motion collapses the duration tokens in kit.css). Tier-S Liquid Glass:
+   bent-light rim + slab inset shadows come from the `lg-card` class
+   (kit.css); this file layers the darker over-scene tint. NO
+   backdrop-filter: dock + capsule + sheet (+ toast) already claim the ≤4
+   concurrent-blur budget (DESIGN.md §7).
+   ========================================================================== */
+
+.app-rotate-pill {
+  position: fixed;
+  right: calc(var(--lg-safe-right) + 12px);
+  bottom: calc(var(--lg-safe-bottom) + 83px); /* dock bottom 12 + dock 61 + gap 10 — the hint-toast band */
+  z-index: 41; /* above the canvas, below sheets (51) and the dock (55) */
+  padding: 3px;
+  border-radius: 999px;
+  font-family: var(--lg-font);
+  /* darker tint than the in-sheet cards: it floats over the bright board */
+  background: linear-gradient(180deg, rgba(52, 56, 68, 0.92), rgba(34, 36, 46, 0.9));
+  border: none;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -8px 18px -12px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+  /* spring in/out (reduced motion collapses the duration tokens in kit.css) */
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  transition:
+    transform var(--lg-dur-control) var(--lg-spring),
+    opacity var(--lg-dur-control) var(--lg-spring);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+.app-rotate-pill.is-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* a sheet resting ≥ half covers this area — hide with the dock */
+body.lg-dock-covered .app-rotate-pill {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-rotate-btn {
+  position: relative; /* hosts the gel bloom layer (lg-specular ::after) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; /* 44px minimum touch target (DESIGN.md §4) */
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--label);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  --lg-spec-size: 96px; /* gel bloom sized for the 44px round button */
+}
+.app-rotate-btn svg {
+  filter: drop-shadow(0 1px 2px rgba(8, 10, 14, 0.45)); /* icon ink */
+}
+.app-rotate-btn[data-pressed='true'] {
+  background: var(--fill-2);
+}
+.app-rotate-btn:focus-visible {
+  outline: 2px solid var(--ios-blue);
+  outline-offset: -2px;
+}
+.app-rotate-btn svg {
+  display: block;
+}
+
+/* hover-capable fine pointers (desktop): the R key rotates — hide the button */
+@media (hover: hover) and (pointer: fine) {
+  .app-rotate-pill {
+    display: none;
+  }
+}
