@@ -35,7 +35,7 @@ def probe_dur(path):
                         "-of","csv=p=0",path],capture_output=True,text=True)
     return float(r.stdout.strip())
 
-def led_on_time(clip, after, crop="240:240:1020:260"):
+def led_on_time(clip, after, crop="200:200:610:140"):
     """first sustained luminance jump in the LED crop region after `after`."""
     r = subprocess.run(["ffmpeg","-hide_banner","-i",clip,"-vf",
         f"crop={crop},signalstats,metadata=print:key=lavfi.signalstats.YAVG",
@@ -50,7 +50,7 @@ def led_on_time(clip, after, crop="240:240:1020:260"):
     base = min(y for tt, y in frames if tt >= after) if frames else 0
     for i, (tt, y) in enumerate(frames):
         if tt < after: continue
-        if y > base + 14:  # LED glow bumps the crop's average strongly
+        if y > base + 8:  # LED glow bumps the crop's average strongly
             return tt
     raise SystemExit("LED on-time not found")
 

@@ -128,14 +128,30 @@ const scenes = {
   /** S12 (+S1 still): Studio path-trace convergence at pose A, no chrome */
   async converge(browser) {
     const { ctx, page, mark, marks } = await openScene(browser, {
-      layout: readExample('date-display.json'), mode: 'studio', css: HIDE_CHROME,
+      layout: readExample('date-display.json'), mode: 'studio',
     })
+    // the 3D "+" grow paddles render only in select mode — arm wire mode
+    await page.getByRole('tab', { name: 'Wire' }).click()
+    await page.waitForTimeout(400)
+    // hide ALL DOM chrome (incl. portals): blank every sibling on the
+    // canvas's ancestor chain
+    await page.evaluate(() => {
+      let el = document.querySelector('canvas')
+      while (el && el.parentElement && el !== document.body) {
+        for (const sib of el.parentElement.children) {
+          if (sib !== el) sib.style.setProperty('display', 'none', 'important')
+        }
+        el = el.parentElement
+      }
+    })
+    await page.mouse.move(5, 5) // park the cursor off-board (no hover FX)
     await page.evaluate((c) => globalThis.__shotRig.setCamera(...c), POSE_A)
+    mark('posed')
     await page.waitForTimeout(600) // camera move resets accumulation; noise visible
     const t0 = Date.now()
     await page.waitForFunction(
       () => globalThis.__shotRig?.renderProgress()?.converged === true,
-      null, { timeout: 600000, polling: 250 },
+      null, { timeout: 1500000, polling: 250 },
     )
     mark('converged')
     console.log(`  converged in ${((Date.now() - t0) / 1000).toFixed(1)}s`)
