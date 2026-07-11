@@ -1,4 +1,4 @@
-# Breadboard Studio — Architecture
+# ohmlet — Architecture
 
 A Crumb-style **3D breadboard circuit simulator** in the browser:
 real-time hybrid analog (MNA) + digital (behavioral IC) simulation,

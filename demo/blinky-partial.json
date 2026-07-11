@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "name": "555 LED blinker (demo, ~1 Hz)",
+  "description": "Beat-tuned variant of the 555 blinker for the demo video: R2=68k so f = 1.44/((10k+2*68k)*10uF) = 0.986 Hz.",
+  "components": [
+    {
+      "id": "PS1",
+      "type": "power_supply",
+      "params": {
+        "voltage": 5
+      }
+    },
+    {
+      "id": "U1",
+      "type": "ne555",
+      "at": "f10"
+    },
+    {
+      "id": "R1",
+      "type": "resistor",
+      "params": {
+        "resistance": 10000
+      },
+      "holes": [
+        "c10",
+        "c11"
+      ]
+    },
+    {
+      "id": "R2",
+      "type": "resistor",
+      "params": {
+        "resistance": 68000
+      },
+      "holes": [
+        "b11",
+        "b12"
+      ]
+    },
+    {
+      "id": "C1",
+      "type": "capacitor",
+      "params": {
+        "capacitance": 1e-05,
+        "polarized": true
+      },
+      "holes": [
+        "a12",
+        "top-2"
+      ]
+    },
+    {
+      "id": "R3",
+      "type": "resistor",
+      "params": {
+        "resistance": 470
+      },
+      "holes": [
+        "g12",
+        "g15"
+      ]
+    },
+    {
+      "id": "D1",
+      "type": "led",
+      "params": {
+        "color": "red"
+      },
+      "holes": [
+        "h15",
+        "top-3"
+      ]
+    },
+    {
+      "id": "PR1",
+      "type": "scope_probe",
+      "params": {
+        "channel": 1
+      },
+      "holes": [
+        "i12"
+      ]
+    }
+  ],
+  "wires": [
+    {
+      "id": "w1",
+      "from": "PS1:+",
+      "to": "top+0",
+      "color": "red"
+    },
+    {
+      "id": "w2",
+      "from": "PS1:-",
+      "to": "top-0",
+      "color": "black"
+    },
+    {
+      "id": "w3",
+      "from": "b10",
+      "to": "top+1",
+      "color": "red"
+    },
+    {
+      "id": "w4",
+      "from": "g10",
+      "to": "top-1",
+      "color": "black"
+    }
+  ]
+}

@@ -409,7 +409,7 @@ export function MoreSheet({ open, onDismiss, desktop = false }: MoreSheetProps) 
             <ListGroup header="Settings">
               <ApiKeyRow />
               <ListRow
-                title="About Breadboard Studio"
+                title="About ohmlet"
                 trailing={`v${pkg.version}`}
                 chevron
                 onPress={() => setAboutOpen((o) => !o)}

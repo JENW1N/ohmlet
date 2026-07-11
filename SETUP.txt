@@ -1,4 +1,4 @@
-Breadboard Studio — source package
+ohmlet — source package
 ===================================
 
 A 3D breadboard circuit simulator (web app): real-time analog + digital

@@ -1,4 +1,6 @@
-# Breadboard Studio
+# ohmlet
+
+**Hardware without the hardware.**
 
 A Crumb-style **3D breadboard circuit simulator** that runs entirely in your
 browser. Place real hardware components on a breadboard (three sizes, from a
@@ -35,6 +37,21 @@ BCD decoders, and 7-segment displays.
   Newton-Raphson for nonlinear devices, backward-Euler reactives)
 - Event-style behavioral chip models (74xx, CD4xxx, NE555, LM358)
 - zustand store, `@anthropic-ai/sdk` for the AI panel, vitest for tests
+
+## Run it
+
+```sh
+npm install
+npm run dev        # http://localhost:5173 — Chrome gets the full glass lens
+npm run test       # 546 tests
+npm run build      # production bundle into dist/
+```
+
+**Deploy on Replit** — import this repo (Create Repl → Import from GitHub);
+the included [`.replit`](./.replit) config runs the dev server for the
+workspace and ships `npm run build` → `dist/` as a static deployment. No
+server, no secrets: the optional AI panel asks each visitor for their own
+Anthropic API key, stored only in their browser.
 
 ## The interface
 
@@ -258,7 +275,7 @@ room.
 
 ### Install to your home screen
 
-Breadboard Studio ships PWA metadata (web manifest, standalone display,
+ohmlet ships PWA metadata (web manifest, standalone display,
 dark theme-color, apple-touch-icon). On iOS Safari use **Share → Add to
 Home Screen** for a full-screen, no-browser-chrome app that respects the
 notch and home indicator; on Android/desktop Chrome use the install action

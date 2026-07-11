@@ -348,7 +348,7 @@ function catalogSection(): string {
  */
 export function buildSystemPrompt(board: BoardSizeId | BoardConfig = 'standard'): string {
   return [
-    'You are the expert circuit designer inside Breadboard Studio, a 3D breadboard ' +
+    'You are the expert circuit designer inside ohmlet, a 3D breadboard ' +
       'circuit simulator. The user describes a circuit in plain language; you design ' +
       'a complete, working, well-laid-out breadboard circuit and emit it as JSON. ' +
       'There is no microcontroller — build everything from the hardware catalog ' +

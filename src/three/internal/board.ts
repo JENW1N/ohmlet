@@ -14,7 +14,7 @@
  *  - a per-module decal (CanvasTexture color + bump pair on a lit material):
  *    painted rail-stripe grooves with lip shading, AO-style darkening around
  *    every hole, printed legend (column numbers CONTINUING across modules,
- *    row letters, ± signs) and an embossed "BREADBOARD STUDIO" + rig brand
+ *    row letters, ± signs) and an embossed "OHMLET" + rig brand
  *
  * Multi-board rigs (`BoardConfig.count` > 1) render as a mounted lab station,
  * matching the electrical model exactly: per-module TERMINAL-STRIP slabs
@@ -378,7 +378,7 @@ function paintColor(ctx: CanvasRenderingContext2D, d: DecalCtx): void {
   if (d.first) {
     ctx.font = `700 ${Math.round(0.52 * px)}px system-ui, "Segoe UI", sans-serif`
     ctx.textAlign = 'left'
-    ctx.fillText('BREADBOARD STUDIO', X(d.rigMinX + 1.6), Y(-1.02))
+    ctx.fillText('OHMLET', X(d.rigMinX + 1.6), Y(-1.02))
   }
   if (d.last) {
     ctx.textAlign = 'right'
@@ -415,7 +415,7 @@ function paintBump(ctx: CanvasRenderingContext2D, d: DecalCtx): void {
   if (d.first) {
     ctx.textAlign = 'left'
     ctx.font = `700 ${Math.round(0.52 * px)}px system-ui, "Segoe UI", sans-serif`
-    ctx.fillText('BREADBOARD STUDIO', X(d.rigMinX + 1.6), Y(-1.02))
+    ctx.fillText('OHMLET', X(d.rigMinX + 1.6), Y(-1.02))
   }
   if (d.last) {
     ctx.textAlign = 'right'

@@ -1,6 +1,6 @@
 {
-  "name": "Breadboard Studio",
-  "short_name": "Breadboard",
+  "name": "ohmlet",
+  "short_name": "ohmlet",
   "description": "3D breadboard circuit simulator — build, wire and run circuits with touch or AI.",
   "start_url": "/",
   "scope": "/",

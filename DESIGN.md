@@ -1,4 +1,4 @@
-# Breadboard Studio — "Liquid Glass" Design Spec
+# ohmlet — "Liquid Glass" Design Spec
 
 The UI must feel like a **polished iOS app**, not a website: mobile-first,
 touch-native, fluid, immediately understandable to a first-time user. This
@@ -469,7 +469,7 @@ InstancedMeshes descending inside each bore (BackSide chamfer funnel, dark
 tapering shaft, metal contact plug), and one
 full-board decal (CanvasTexture color + bump pair on a lit material):
 painted rail-stripe grooves with lip shading, AO-style darkening around
-every hole, printed legend, and an embossed `BREADBOARD STUDIO` + size brand.
+every hole, printed legend, and an embossed `OHMLET` + size brand.
 
 **Board sizes & the 2-D grid.** `scene.setLayout` reads the full rig
 (`boardConfigOf(layout)`: size preset × modules wide × board-rows deep);

@@ -1,5 +1,5 @@
 /**
- * Core shared types for Breadboard Studio.
+ * Core shared types for ohmlet.
  * CONTRACT FILE — do not modify without coordinating with the integrator.
  */
 
